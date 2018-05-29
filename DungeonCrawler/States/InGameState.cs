@@ -31,6 +31,7 @@ namespace DungeonCrawler.States
 
         public override void Init()
         {
+            //t
             GenerateCollisionMap();
         }
 
