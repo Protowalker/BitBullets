@@ -1,6 +1,9 @@
 ﻿using DungeonCrawler.Actions;
+using DungeonCrawler.Characters;
 using DungeonCrawler.Collision;
 using DungeonCrawler.Handlers;
+using DungeonCrawler.Networking;
+using Lidgren.Network;
 using SFML.Graphics;
 using SFML.System;
 using SFML.Window;
@@ -15,52 +18,63 @@ namespace DungeonCrawler.States
 {
     class InGameState : State
     {
+
         public TmxMap map;
         public Texture tileset;
 
-        public QuadTree quadTree;
 
         public List<RectangleShape> renderQueue = new List<RectangleShape>();
+
+        public int playerId;
 
         public InGameState(TmxMap map, Texture tileset)
         {
             this.map = map;
             this.tileset = tileset;
-            quadTree = new QuadTree(new FloatRect(-10000000, -100000000, 1000000000, 1000000000), 2);
+            netState = new NetGameState();
+
         }
 
         public override void Init()
         {
-            //t
-            GenerateCollisionMap();
+            Game.app.MouseMoved += new EventHandler<MouseMoveEventArgs>(OnMouseMove);
+            Game.app.MouseButtonPressed += new EventHandler<MouseButtonEventArgs>(Handlers.InputHandler.OnMouseButtonPressed);
+            Game.app.MouseButtonReleased += new EventHandler<MouseButtonEventArgs>(Handlers.InputHandler.OnMouseButtonReleased);
+            //GenerateCollisionMap();
         }
 
         public override void Render()
         {
-            Game.view.Center = Game.player.rect.Position;
-            Game.app.SetView(Game.view);
-
-            DrawMap(map, tileset);
-
-            foreach (Entity ent in World.Entities.Values)
+            if (netState.ready)
             {
-                if ((ent.flags & Entity.Flags.RENDER) == Entity.Flags.RENDER)
-                    Game.app.Draw(ent.rect);
+                Game.view.Center = netState.Entities[playerId].rect.Position;
+                Game.app.SetView(Game.view);
+
+                DrawMap(map, tileset);
+
+                foreach (Entity ent in Game.states[Game.currentState].netState.Entities.Values)
+                {
+                    if ((ent.flags & Entity.Flags.RENDER) == Entity.Flags.RENDER)
+                        Game.app.Draw(ent.rect);
+                }
             }
 
         }
 
         public override void Update()
         {
-            ControlPlayer(Game.player.currentCharacter.MovementSpeed);
-            World.Update();
-            if (InputHandler.MouseButtonPressed(Mouse.Button.Left))
+            netState.Update();
+            if (netState.ready)
             {
-                Game.player.OnPrimaryFire();
-            }
-            if (InputHandler.MouseButtonDown(Mouse.Button.Right))
-            {
-                Game.player.OnSecondaryFire();
+                ControlPlayer(((Player)netState.Entities[playerId]).currentCharacter.MovementSpeed);
+                if (InputHandler.MouseButtonPressed(Mouse.Button.Left))
+                {
+                    ((Player)netState.Entities[playerId]).OnPrimaryFire();
+                }
+                if (InputHandler.MouseButtonDown(Mouse.Button.Right))
+                {
+                    ((Player)netState.Entities[playerId]).OnSecondaryFire();
+                }
             }
         }
 
@@ -71,23 +85,23 @@ namespace DungeonCrawler.States
             //Check left and right. Seperated so that collision is not checked while inside a box because of the other direction.
             if (Keyboard.IsKeyPressed(Keyboard.Key.A))
             {
-                Game.player.Move(new Vector2f(-playerSpeed, 0));
+                ((Player)netState.Entities[playerId]).Move(new Vector2f(-playerSpeed, 0));
             }
 
             if (Keyboard.IsKeyPressed(Keyboard.Key.D))
             {
-                Game.player.Move(new Vector2f(playerSpeed, 0));
+                ((Player)netState.Entities[playerId]).Move(new Vector2f(playerSpeed, 0));
             }
 
             //check up and down.
             if (Keyboard.IsKeyPressed(Keyboard.Key.W))
             {
-                Game.player.Move(new Vector2f(0, -playerSpeed));
+                ((Player)netState.Entities[playerId]).Move(new Vector2f(0, -playerSpeed));
             }
 
             if (Keyboard.IsKeyPressed(Keyboard.Key.S))
             {
-                Game.player.Move(new Vector2f(0, playerSpeed));
+                ((Player)netState.Entities[playerId]).Move(new Vector2f(0, playerSpeed));
             }
 
         }
@@ -158,13 +172,22 @@ namespace DungeonCrawler.States
                             RectangleShape rect = new RectangleShape(new Vector2f((float)obj.Width, (float)obj.Height));
                             rect.Position = new Vector2f(x, y) + new Vector2f((float)obj.X, (float)obj.Y);
                             Wall wall = new Wall(rect);
-                            World.Entities[wall.Id].flags = Entity.Flags.WALL;
+                            Game.states[Game.currentState].netState.Entities[wall.Id].flags = Entity.Flags.WALL;
 
                         }
                     }
 
                 }
             }
+        }
+
+        public void OnMouseMove(object sender, MouseMoveEventArgs e)
+        {
+            Vector2f mousePos = Game.app.MapPixelToCoords(new Vector2i(e.X, e.Y));
+            Vector2f relPos = mousePos - netState.Entities[playerId].rect.Position;
+            float angle = (float)Math.Atan2(relPos.Y, relPos.X);
+            ((Player)netState.Entities[playerId]).direction = new Vector2f((float)Math.Cos(angle), (float)Math.Sin(angle));
+            //Game.player.direction = relPos;
         }
     }
 }

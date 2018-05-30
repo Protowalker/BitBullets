@@ -6,6 +6,7 @@ using System.Threading.Tasks;
 
 namespace DungeonCrawler.Actions
 {
+    [Serializable]
     abstract class Action
     {
         public abstract void Update(float elapsed);

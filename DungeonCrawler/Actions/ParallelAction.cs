@@ -6,7 +6,8 @@ using System.Threading.Tasks;
 
 namespace DungeonCrawler.Actions
 {
-    class Parallel : CompositeAction
+    [Serializable]
+    class ParallelAction : CompositeAction
     {
         public override void Update(float elapsed)
         {

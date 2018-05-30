@@ -1,4 +1,5 @@
 ﻿using DungeonCrawler.Actions;
+using DungeonCrawler.Networking;
 using DungeonCrawler.States;
 using SFML.Graphics;
 using SFML.System;
@@ -7,11 +8,22 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using ZeroFormatter;
 
 namespace DungeonCrawler
 {
     abstract class Entity
     {
+        [Serializable]
+        public enum EntityType
+        {
+            Player,
+            ShotgunPellet,
+            Wall
+        }
+
+        public EntityType type;
+
         public static int highestId = 0;
 
         protected int id;
@@ -19,8 +31,8 @@ namespace DungeonCrawler
         public abstract int Id { get; set; }
         public abstract int ParentId { get; set; }
 
-        protected Vector2f moveDelta = new Vector2f();
-
+        
+        internal Vector2f moveDelta = new Vector2f();
 
         public RectangleShape rect = new RectangleShape();
 
@@ -29,7 +41,7 @@ namespace DungeonCrawler
         public event MoveHandler MoveEvent = delegate { };
         public event DieHandler DieEvent = delegate { };
 
-
+        [Serializable]
         [Flags]
         public enum Flags { PLAYER = 1,
                             WALL = 2,
@@ -44,9 +56,12 @@ namespace DungeonCrawler
             MoveEvent(id, delta);
         }
 
+        public abstract void Init();
         public abstract void Update(float deltaTime);
 
         //Called on Entity death
         public abstract void Destroy();
+
+        public abstract NetEntity ToNetEntity();
     }
 }

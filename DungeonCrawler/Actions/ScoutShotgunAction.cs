@@ -1,4 +1,5 @@
 ﻿using DungeonCrawler.Entities;
+using DungeonCrawler.States;
 using SFML.System;
 using System;
 using System.Collections.Generic;
@@ -21,7 +22,7 @@ namespace DungeonCrawler.Actions
 
         public override void Update(float elapsed)
         {
-            Player player = (Player)World.Entities[playerId];
+            Player player = (Player)(Game.states[Game.currentState]).netState.Entities[playerId];
             Random rand = new Random();
             for(int i = 0; i < 10; i++)
             {

@@ -1,4 +1,5 @@
 ﻿using DungeonCrawler.Actions;
+using DungeonCrawler.States;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -7,6 +8,7 @@ using System.Threading.Tasks;
 
 namespace DungeonCrawler.Characters
 {
+    [Serializable]
     class Scout : Character
     {
         public new Weapon[] weapons = new Weapon[1];
@@ -18,22 +20,22 @@ namespace DungeonCrawler.Characters
         public override int CurrentWeapon { get => currentWeapon; set => currentWeapon = value; }
         public override Weapon[] Weapons { get => weapons; set => weapons = value; }
 
-        public Scout(Player player)
+        public Scout(int playerId)
         {
-            parentId = player.Id;
+            parentId = playerId;
             weapons[0] = new Weapon();
-            weapons[0].primaryFire = new ScoutShotgunAction(player.Id);
-            weapons[0].secondaryFire = new ScoutViewfinderAction(player.Id);
+            weapons[0].primaryFire = new ScoutShotgunAction(playerId);
+            weapons[0].secondaryFire = new ScoutViewfinderAction(playerId);
         }
 
         public override void OnPrimaryFire()
         {
-            World.RealTimeActions.Add(weapons[0].primaryFire);
+            Game.states[Game.currentState].netState.RealTimeActions.Add(weapons[0].primaryFire);
         }
 
         public override void OnSecondaryFire()
         {
-            World.RealTimeActions.Add(weapons[0].secondaryFire);
+            Game.states[Game.currentState].netState.RealTimeActions.Add(weapons[0].secondaryFire);
         }
 
         public override void OnDeath()

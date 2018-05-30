@@ -16,6 +16,7 @@ namespace DungeonCrawler.Collision
         QuadTreeNode parent;
         internal List<int> items = new List<int>();
 
+        
         internal FloatRect rect;
         int maxItems;
 
@@ -46,7 +47,7 @@ namespace DungeonCrawler.Collision
         {
             if (!InsertInChild(item))
             {
-                World.Entities[item].MoveEvent += new Entity.MoveHandler(ItemMove);
+                Game.states[Game.currentState].netState.Entities[item].MoveEvent += new Entity.MoveHandler(ItemMove);
                 items.Add(item);
             }
 
@@ -104,7 +105,7 @@ namespace DungeonCrawler.Collision
                 // test the point in each item
                 foreach (int item in items)
                 {
-                    if (World.Entities[item].rect.GetGlobalBounds().Intersects(colRect)) itemsFound.Add(item);
+                    if (Game.states[Game.currentState].netState.Entities[item].rect.GetGlobalBounds().Intersects(colRect)) itemsFound.Add(item);
                 }
 
                 // query all subtrees
@@ -145,7 +146,7 @@ namespace DungeonCrawler.Collision
             {
                 QuadTreeNode n = null;
 
-                FloatRect rect = World.Entities[item].rect.GetGlobalBounds();
+                FloatRect rect = Game.states[Game.currentState].netState.Entities[item].rect.GetGlobalBounds();
 
                 // Check the nodes that could contain the item
                 if (topLeftNode.ContainsRect(rect))
@@ -185,7 +186,7 @@ namespace DungeonCrawler.Collision
 
         internal void RemoveItem(int i)
         {
-            World.Entities[items[i]].MoveEvent -= new Entity.MoveHandler(ItemMove);
+            Game.states[Game.currentState].netState.Entities[items[i]].MoveEvent -= new Entity.MoveHandler(ItemMove);
             items.RemoveAt(i);
         }
 
@@ -208,7 +209,7 @@ namespace DungeonCrawler.Collision
                 return false;
             }
 
-            FloatRect rect = World.Entities[item].rect.GetGlobalBounds();
+            FloatRect rect = Game.states[Game.currentState].netState.Entities[item].rect.GetGlobalBounds();
 
             if (topLeftNode.ContainsRect(rect))
             {
@@ -272,7 +273,7 @@ namespace DungeonCrawler.Collision
 
         private void ItemMove(int id, Vector2f delta)
         {
-            Entity item = World.Entities[id];
+            Entity item = Game.states[Game.currentState].netState.Entities[id];
             if (items.Contains(id))
             {
                 int i = items.IndexOf(id);

@@ -6,6 +6,7 @@ using System.Threading.Tasks;
 
 namespace DungeonCrawler.Actions
 {
+    [Serializable]
     abstract class CompositeAction : Action
     {
         protected List<Action> actionList = new List<Action>();

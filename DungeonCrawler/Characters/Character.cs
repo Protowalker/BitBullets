@@ -1,8 +1,10 @@
 ﻿using DungeonCrawler.Actions;
+using System;
 using System.Collections.Generic;
 
 namespace DungeonCrawler
 {
+    [Serializable]
     abstract class Character
     {
         //Every Character Class is based on the abstract Class Character. (That's a mouthful.)

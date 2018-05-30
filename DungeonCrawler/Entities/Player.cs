@@ -1,4 +1,5 @@
 ﻿using DungeonCrawler.Actions;
+using DungeonCrawler.Networking;
 using DungeonCrawler.States;
 using SFML.Graphics;
 using SFML.System;
@@ -10,12 +11,14 @@ using System.Threading.Tasks;
 
 namespace DungeonCrawler
 {
+    [Serializable]
     class Player : Entity
     {
         public Character currentCharacter;
 
-        float health;
+        public float health;
 
+        [NonSerialized]
         public Vector2f direction = new Vector2f();
 
         public override int Id { get => id; set => id = value; }
@@ -30,8 +33,16 @@ namespace DungeonCrawler
             health = 1;
             id = Entity.highestId + 1;
             highestId = id;
-            World.Entities.Add(id, this);
-            ((InGameState)Game.currentState).quadTree.Insert(id);
+
+            rect.Origin = rect.Size / 2;
+            type = EntityType.Player;
+        }
+
+        public override void Init()
+        {
+            MoveEvent += new MoveHandler(Game.states[Game.currentState].netState.OnMove);
+            (Game.states[Game.currentState]).netState.Entities.Add(id, this);
+            (Game.states[Game.currentState]).netState.quadTree.Insert(id);
         }
 
         public void SetCurrentCharacter(Character currentCharacter)
@@ -54,24 +65,24 @@ namespace DungeonCrawler
                 rect.Position += new Vector2f(moveDelta.X * deltaTime, 0);
                 FloatRect overlap;
 
-                List<int> collided = ((InGameState)Game.currentState).quadTree.GetItems(rect.GetGlobalBounds());
+                List<int> collided = (Game.states[Game.currentState].netState.quadTree.GetItems(rect.GetGlobalBounds()));
                 bool intersecting;
 
                 foreach (int id in collided)
                 {
-                    if ((World.Entities[id].flags & Entity.Flags.WALL) != Entity.Flags.WALL) continue;
+                    if ((Game.states[Game.currentState].netState.Entities[id].flags & Entity.Flags.WALL) != Entity.Flags.WALL) continue;
 
-                    intersecting = World.Entities[id].rect.GetGlobalBounds().Intersects(rect.GetGlobalBounds(), out overlap);
+                    intersecting = (Game.states[Game.currentState].netState.Entities[id].rect.GetGlobalBounds().Intersects(rect.GetGlobalBounds(), out overlap));
 
                     Console.WriteLine("X: " + overlap);
 
                     if (intersecting)
                     {
-                        if (World.Entities[id].rect.GetGlobalBounds().Left + World.Entities[id].rect.Size.X > overlap.Left + overlap.Width) //if the player is to the right of the shape
+                        if (Game.states[Game.currentState].netState.Entities[id].rect.GetGlobalBounds().Left + Game.states[Game.currentState].netState.Entities[id].rect.Size.X > overlap.Left + overlap.Width) //if the player is to the right of the shape
                         {
                             rect.Position -= new Vector2f(overlap.Width, 0);
                         }
-                        else if (World.Entities[id].rect.GetGlobalBounds().Left < overlap.Left) //to the left
+                        else if (Game.states[Game.currentState].netState.Entities[id].rect.GetGlobalBounds().Left < overlap.Left) //to the left
                         {
                             rect.Position += new Vector2f(overlap.Width, 0);
                         }
@@ -80,25 +91,25 @@ namespace DungeonCrawler
 
 
                 rect.Position += new Vector2f(0, moveDelta.Y * deltaTime);
-                collided = ((InGameState)Game.currentState).quadTree.GetItems(rect.GetGlobalBounds());
+                collided = Game.states[Game.currentState].netState.quadTree.GetItems(rect.GetGlobalBounds());
 
                 //Now Y
                 foreach (int id in collided)
                 {
-                    if ((World.Entities[id].flags & Entity.Flags.WALL) != Entity.Flags.WALL) continue;
+                    if ((Game.states[Game.currentState].netState.Entities[id].flags & Entity.Flags.WALL) != Entity.Flags.WALL) continue;
 
-                    intersecting = World.Entities[id].rect.GetGlobalBounds().Intersects(rect.GetGlobalBounds(), out overlap);
+                    intersecting = Game.states[Game.currentState].netState.Entities[id].rect.GetGlobalBounds().Intersects(rect.GetGlobalBounds(), out overlap);
 
                     Console.WriteLine("Y: " + overlap);
 
                     if (intersecting)
                     {
-                        if (World.Entities[id].rect.GetGlobalBounds().Top < overlap.Top) //above
+                        if (Game.states[Game.currentState].netState.Entities[id].rect.GetGlobalBounds().Top < overlap.Top) //above
                         {
                             rect.Position += new Vector2f(0, overlap.Height);
 
                         }
-                        else if (World.Entities[id].rect.GetGlobalBounds().Top + World.Entities[id].rect.Size.Y > overlap.Top + overlap.Height) //below
+                        else if (Game.states[Game.currentState].netState.Entities[id].rect.GetGlobalBounds().Top + Game.states[Game.currentState].netState.Entities[id].rect.Size.Y > overlap.Top + overlap.Height) //below
                         {
                             rect.Position -= new Vector2f(0, overlap.Height);
                         }
@@ -121,6 +132,26 @@ namespace DungeonCrawler
         public void TakeDamage(float damageTaken)
         {
             health -= damageTaken;
+        }
+
+        public override NetEntity ToNetEntity()
+        {
+            NetPlayer netPlayer = new NetPlayer();
+            netPlayer.flags = flags;
+            netPlayer.Id = id;
+            netPlayer.ParentId = parentId;
+            netPlayer.moveDeltaX = moveDelta.X;
+            netPlayer.moveDeltaY = moveDelta.Y;
+            netPlayer.rectX = rect.Position.X;
+            netPlayer.rectY = rect.Position.Y;
+            netPlayer.rectWidth = rect.Size.X;
+            netPlayer.rectHeight = rect.Size.Y;
+            netPlayer.currentCharacter = currentCharacter;
+            netPlayer.health = health;
+            netPlayer.angle = (float)Math.Atan2(direction.Y, direction.X);
+            netPlayer.type = type;
+
+            return netPlayer;
         }
     }
 }

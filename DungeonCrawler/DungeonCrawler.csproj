@@ -11,6 +11,21 @@
     <TargetFrameworkVersion>v4.6.1</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
     <AutoGenerateBindingRedirects>true</AutoGenerateBindingRedirects>
+    <PublishUrl>publish\</PublishUrl>
+    <Install>true</Install>
+    <InstallFrom>Disk</InstallFrom>
+    <UpdateEnabled>false</UpdateEnabled>
+    <UpdateMode>Foreground</UpdateMode>
+    <UpdateInterval>7</UpdateInterval>
+    <UpdateIntervalUnits>Days</UpdateIntervalUnits>
+    <UpdatePeriodically>false</UpdatePeriodically>
+    <UpdateRequired>false</UpdateRequired>
+    <MapFileExtensions>true</MapFileExtensions>
+    <ApplicationRevision>0</ApplicationRevision>
+    <ApplicationVersion>1.0.0.%2a</ApplicationVersion>
+    <IsWebBootstrapper>false</IsWebBootstrapper>
+    <UseApplicationTrust>false</UseApplicationTrust>
+    <BootstrapperEnabled>true</BootstrapperEnabled>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
     <PlatformTarget>AnyCPU</PlatformTarget>
@@ -56,6 +71,7 @@
     <None Include="Assets\TestMap1.tmx">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
+    <None Include="packages.config" />
   </ItemGroup>
   <ItemGroup>
     <Reference Include="Lidgren.Network, Version=3.6.0.1625, Culture=neutral, processorArchitecture=MSIL">
@@ -74,9 +90,13 @@
     <Reference Include="sfmlnet-window-2">
       <HintPath>..\..\..\..\SFML.Net-2.2-64-bit\SFML.Net-2.2\lib\sfmlnet-window-2.dll</HintPath>
     </Reference>
+    <Reference Include="System" />
     <Reference Include="System.Xml.Linq" />
     <Reference Include="TiledSharp">
       <HintPath>..\..\SFMLRPG\SFMLRPG\bin\x64\Debug\TiledSharp.dll</HintPath>
+    </Reference>
+    <Reference Include="ZeroFormatter.Interfaces, Version=1.6.4.0, Culture=neutral, processorArchitecture=MSIL">
+      <HintPath>..\packages\ZeroFormatter.Interfaces.1.6.4\lib\net45\ZeroFormatter.Interfaces.dll</HintPath>
     </Reference>
   </ItemGroup>
   <ItemGroup>
@@ -111,10 +131,10 @@
   <ItemGroup>
     <Compile Include="Actions\Action.cs" />
     <Compile Include="Actions\CompositeAction.cs" />
-    <Compile Include="Actions\Parallel.cs" />
+    <Compile Include="Actions\ParallelAction.cs" />
     <Compile Include="Actions\ScoutShotgunAction.cs" />
     <Compile Include="Actions\ScoutViewfinderAction.cs" />
-    <Compile Include="Actions\Sequence.cs" />
+    <Compile Include="Actions\SequenceAction.cs" />
     <Compile Include="Actions\Weapon.cs" />
     <Compile Include="Characters\Character.cs" />
     <Compile Include="Characters\Scout.cs" />
@@ -124,19 +144,35 @@
     <Compile Include="Entities\Entity.cs" />
     <Compile Include="Game.cs" />
     <Compile Include="Handlers\InputHandler.cs" />
+    <Compile Include="Networking\NetEntities\NetEntity.cs" />
+    <Compile Include="Networking\NetEntities\NetShotgunPellet.cs" />
+    <Compile Include="Networking\NetEntities\NetWall.cs" />
+    <Compile Include="Networking\NetGameState.cs" />
+    <Compile Include="Networking\NetEntities\NetPlayer.cs" />
+    <Compile Include="Networking\NetServerGameState.cs" />
     <Compile Include="States\InGameState.cs" />
+    <Compile Include="States\ServerState.cs" />
     <Compile Include="States\State.cs" />
     <Compile Include="Entities\Wall.cs" />
     <Compile Include="Entities\Player.cs" />
-    <Compile Include="World.cs" />
   </ItemGroup>
-  <ItemGroup>
-    <Folder Include="Networking\" />
-  </ItemGroup>
+  <ItemGroup />
   <ItemGroup>
     <None Include="Assets\Dungeon.tsx">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
+  </ItemGroup>
+  <ItemGroup>
+    <BootstrapperPackage Include=".NETFramework,Version=v4.6.1">
+      <Visible>False</Visible>
+      <ProductName>Microsoft .NET Framework 4.6.1 %28x86 and x64%29</ProductName>
+      <Install>true</Install>
+    </BootstrapperPackage>
+    <BootstrapperPackage Include="Microsoft.Net.Framework.3.5.SP1">
+      <Visible>False</Visible>
+      <ProductName>.NET Framework 3.5 SP1</ProductName>
+      <Install>false</Install>
+    </BootstrapperPackage>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
 </Project>

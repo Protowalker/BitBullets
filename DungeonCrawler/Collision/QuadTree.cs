@@ -1,4 +1,5 @@
 ﻿using DungeonCrawler.Actions;
+using DungeonCrawler.States;
 using SFML.Graphics;
 using SFML.System;
 using System;
@@ -23,7 +24,7 @@ namespace DungeonCrawler.Collision
 
         public void Insert(int item)
         {
-            FloatRect rect = World.Entities[item].rect.GetGlobalBounds();
+            FloatRect rect = Game.states[Game.currentState].netState.Entities[item].rect.GetGlobalBounds();
             // check if the world needs resizing
             if (!headNode.rect.Intersects(rect))
             {
