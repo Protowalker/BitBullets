@@ -8,11 +8,11 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
-using ZeroFormatter;
+
 
 namespace DungeonCrawler
 {
-    abstract class Entity
+    public abstract class Entity
     {
         [Serializable]
         public enum EntityType

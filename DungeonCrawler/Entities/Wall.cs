@@ -46,16 +46,16 @@ namespace DungeonCrawler
         public override NetEntity ToNetEntity()
         {
             NetWall netWall = new NetWall();
-            netWall.flags = flags;
+            netWall.Flags = flags;
             netWall.Id = id;
             netWall.ParentId = parentId;
-            netWall.moveDeltaX = moveDelta.X;
-            netWall.moveDeltaY = moveDelta.Y;
-            netWall.rectX = rect.Position.X;
-            netWall.rectY = rect.Position.Y;
-            netWall.rectWidth = rect.Size.X;
-            netWall.rectHeight = rect.Size.Y;
-            netWall.type = type;
+            netWall.MoveDeltaX = moveDelta.X;
+            netWall.MoveDeltaY = moveDelta.Y;
+            netWall.RectX = rect.Position.X;
+            netWall.RectY = rect.Position.Y;
+            netWall.RectWidth = rect.Size.X;
+            netWall.RectHeight = rect.Size.Y;
+            netWall.Type = type;
 
             return netWall;
         }

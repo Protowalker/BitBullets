@@ -15,6 +15,7 @@ namespace DungeonCrawler.States
     {
         TmxMap map;
 
+        double tickRate = 1 / 20;
 
         public ServerState(TmxMap map)
         {
@@ -34,7 +35,11 @@ namespace DungeonCrawler.States
 
         public override void Update()
         {
-            netState.Update();
+            if(Game.deltaClock.ElapsedTime.AsSeconds() >= tickRate)
+            {
+                netState.Update();
+                Game.deltaClock.Restart();
+            }
         }
 
         private void GenerateCollisionMap()

@@ -72,12 +72,10 @@ namespace DungeonCrawler.Actions
                 states[currentState].Render();
                 states[currentState].Update();
 
-                Console.WriteLine("test");
-
                 app.Display();
 
 
-                deltaClock.Restart();
+                
             }
         }
 

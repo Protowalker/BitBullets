@@ -1,5 +1,6 @@
 ﻿using DungeonCrawler.Entities;
 using DungeonCrawler.States;
+using MessagePack;
 using SFML.System;
 using System;
 using System.Collections.Generic;
@@ -9,15 +10,17 @@ using System.Threading.Tasks;
 
 namespace DungeonCrawler.Actions
 {
-    class ScoutShotgunAction : Action
+    [MessagePackObject]
+    public class ScoutShotgunAction : Action
     {
-        int playerId;
-        
+        [Key(1)]
+        public int playerId;
 
-        public ScoutShotgunAction(int playerId)
+        [SerializationConstructor]
+        public ScoutShotgunAction(bool finished, int playerId)
         {
             this.playerId = playerId;
-            finished = true;
+            this.finished = finished;
         }
 
         public override void Update(float elapsed)

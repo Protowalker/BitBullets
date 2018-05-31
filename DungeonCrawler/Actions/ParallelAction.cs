@@ -1,4 +1,5 @@
-﻿using System;
+﻿using MessagePack;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -6,8 +7,8 @@ using System.Threading.Tasks;
 
 namespace DungeonCrawler.Actions
 {
-    [Serializable]
-    class ParallelAction : CompositeAction
+    [MessagePackObject]
+    public class ParallelAction : CompositeAction
     {
         public override void Update(float elapsed)
         {
@@ -15,6 +16,17 @@ namespace DungeonCrawler.Actions
             actionList.ForEach(a => a.Update(elapsed));
             actionList.RemoveAll(a => a.finished);
             finished = actionList.Count == 0;
+        }
+
+        public ParallelAction()
+        {
+        }
+
+        [SerializationConstructor]
+        public ParallelAction(bool finished, List<Action> actionList)
+        {
+            this.finished = finished;
+            this.actionList = actionList;
         }
     }
 }

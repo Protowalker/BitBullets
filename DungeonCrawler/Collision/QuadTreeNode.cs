@@ -1,4 +1,5 @@
 ﻿using DungeonCrawler.Actions;
+using DungeonCrawler.Networking;
 using DungeonCrawler.States;
 using SFML.Graphics;
 using SFML.System;
@@ -20,14 +21,14 @@ namespace DungeonCrawler.Collision
         internal FloatRect rect;
         int maxItems;
 
-        QuadTreeNode topLeftNode;
-        QuadTreeNode topRightNode;
-        QuadTreeNode bottomLeftNode;
-        QuadTreeNode bottomRightNode;
+       internal QuadTreeNode topLeftNode;
+       internal QuadTreeNode topRightNode;
+       internal QuadTreeNode bottomLeftNode;
+       internal QuadTreeNode bottomRightNode;
 
 
 
-        bool isPartitioned;
+        internal bool isPartitioned;
 
         public QuadTreeNode(QuadTreeNode parent, FloatRect rect, int maxItems)
         {
@@ -293,6 +294,34 @@ namespace DungeonCrawler.Collision
                 // this node doesn't contain that item, stop notifying it about it
                 item.MoveEvent -= new Entity.MoveHandler(ItemMove);
             }
+        }
+
+        public NetQuadTreeNode ToNetQuadTreeNode()
+        {
+            NetQuadTreeNode node = new NetQuadTreeNode();
+            if(parent != null) {
+                node.parent = parent.ToNetQuadTreeNode();
+            }
+            else
+            {
+                node.parent = null;
+            }
+
+            node.items = items;
+
+            node.rectX = rect.Left;
+            node.rectY = rect.Top;
+            node.rectWidth = rect.Width;
+            node.rectHeight = rect.Height;
+
+            node.maxItems = maxItems;
+
+            if (topLeftNode != null) node.topLeftNode = topLeftNode.ToNetQuadTreeNode();
+            if (topRightNode != null) node.topRightNode = topRightNode.ToNetQuadTreeNode();
+            if (bottomLeftNode != null) node.bottomLeftNode = bottomLeftNode.ToNetQuadTreeNode();
+            if (bottomRightNode != null) node.bottomRightNode = bottomRightNode.ToNetQuadTreeNode();
+
+            return node;
         }
     }
 }

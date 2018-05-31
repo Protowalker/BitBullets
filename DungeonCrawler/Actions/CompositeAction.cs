@@ -1,4 +1,5 @@
-﻿using System;
+﻿using MessagePack;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -6,10 +7,13 @@ using System.Threading.Tasks;
 
 namespace DungeonCrawler.Actions
 {
-    [Serializable]
-    abstract class CompositeAction : Action
+    [Union(1, typeof(ParallelAction))]
+    [Union(2, typeof(SequenceAction))]
+    [MessagePackObject]
+    public abstract class CompositeAction : Action
     {
-        protected List<Action> actionList = new List<Action>();
+        [Key(1)]
+        public List<Action> actionList = new List<Action>();
         public void Add(Action action)
         {
             actionList.Add(action);

@@ -1,4 +1,5 @@
 ﻿using DungeonCrawler.Actions;
+using DungeonCrawler.Networking;
 using DungeonCrawler.States;
 using SFML.Graphics;
 using SFML.System;
@@ -12,9 +13,16 @@ namespace DungeonCrawler.Collision
 {
     class QuadTree
     {
+
         protected QuadTreeNode headNode;
 
         protected int maxItems;
+
+        public QuadTree(QuadTreeNode headNode, int maxItems)
+        {
+            this.headNode = headNode;
+            this.maxItems = maxItems;
+        }
 
         public QuadTree(FloatRect worldRect, int maxItems)
         {
@@ -85,6 +93,15 @@ namespace DungeonCrawler.Collision
                 return true;
             }
             else return false;
+        }
+
+        public NetQuadTree ToNetQuadTree()
+        {
+            NetQuadTree tree = new NetQuadTree();
+            tree.headNode = headNode.ToNetQuadTreeNode();
+            tree.maxItems = maxItems;
+
+            return tree;
         }
     }
 }

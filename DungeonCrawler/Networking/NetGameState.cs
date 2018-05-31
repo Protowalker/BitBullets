@@ -13,6 +13,7 @@ using System.Runtime.Serialization.Formatters.Binary;
 using System.IO;
 using DungeonCrawler.States;
 using DungeonCrawler.Entities;
+using MessagePack;
 
 namespace DungeonCrawler.Networking
 {
@@ -34,7 +35,8 @@ namespace DungeonCrawler.Networking
             Move,
             Action,
             DeltaState,
-            NewPlayer
+            NewPlayer,
+            StateRequest
         }
         NetClient client;
 
@@ -52,6 +54,7 @@ namespace DungeonCrawler.Networking
 
         public static BinaryFormatter binFormatter = new BinaryFormatter();
 
+        public bool connected;
         public bool ready;
 
         public NetGameState()
@@ -68,7 +71,7 @@ namespace DungeonCrawler.Networking
         {
             ProcessMessages();
 
-            realTimeActions.Update(Game.deltaClock.ElapsedTime.AsMilliseconds());
+            //realTimeActions.Update(Game.deltaClock.ElapsedTime.AsMilliseconds());
             foreach (Entity ent in Entities.Values)
             {
                 ent.Update(Game.deltaClock.ElapsedTime.AsMilliseconds());
@@ -99,12 +102,6 @@ namespace DungeonCrawler.Networking
                             {
                                 case NetConnectionStatus.Connected:
                                     Console.WriteLine("Connected");
-                                    Player player = new Player();
-                                    player.Init();
-                                    msg.ReadInt32();
-                                    ((InGameState)Game.states[Game.currentState]).playerId = player.Id;
-                                    Game.states[Game.currentState].Init();
-                                    ready = true;
                                     break;
                                 case NetConnectionStatus.Disconnected:
                                     break;
@@ -124,38 +121,39 @@ namespace DungeonCrawler.Networking
                                     Console.WriteLine("New player");
                                     Player player = new Player();
                                     player.Init();
-                                    int playerId = player.Id;
                                     ((InGameState)Game.states[Game.currentState]).playerId = msg.ReadInt32();
+                                    connected = true;
+                                    SendMessage(((InGameState)Game.states[Game.currentState]).playerId, MessageType.StateRequest, new byte[0]);
                                 break;
 
                             case MessageType.DeltaState:
-                                    Console.WriteLine("DeltaState");
-                                    MemoryStream mStream = new MemoryStream();
+                                    if (!ready) ready = true;
                                     ////Quadtree
-                                    int length;
+                                    //int length = BitConverter.ToInt32(msg.ReadBytes(4), 0);
                                     //if (length > 0)
                                     //{
-                                    //    QuadTree newTree = binFormatter.Deserialize(new MemoryStream(msg.ReadBytes(length))) as QuadTree;
+                                    //    QuadTree newTree = MessagePackSerializer.Deserialize<NetQuadTree>(msg.ReadBytes(length)).ToQuadTree();
                                     //    this.quadTree = newTree;
                                     //}
                                     //entities
+                                    //quadTree = new QuadTree(new FloatRect(-10000000, -100000000, 1000000000, 1000000000), 2);
 
-
-                                    length = (int)BitConverter.ToInt32(msg.ReadBytes(4), 0);
+                                    int length = BitConverter.ToInt32(msg.ReadBytes(4), 0);
                                     if (length > 0)
                                     {
-                                        mStream = new MemoryStream(msg.ReadBytes(length));
-                                        mStream.Position = 0;
-
-                                        List<NetEntity> netEnts = binFormatter.Deserialize(mStream) as List<NetEntity>;
+                                        List<NetEntity> netEnts = MessagePackSerializer.Deserialize<List<NetEntity>>(msg.ReadBytes(length));
                                         Dictionary<int, Entity> newEntities = new Dictionary<int, Entity>();
-                                        foreach(NetEntity netEnt in netEnts)
+                                        foreach (NetEntity netEnt in netEnts)
                                         {
                                             Entity ent;
-                                            switch (netEnt.type)
+                                            switch (netEnt.Type)
                                             {
                                                 case Entity.EntityType.Player:
                                                     ent = (Player)netEnt.ToEntity();
+                                                    if(ent.Id == ((InGameState)Game.states[Game.currentState]).playerId)
+                                                    {
+                                                        ent.MoveEvent += new Entity.MoveHandler(OnMove);
+                                                    }
                                                     break;
                                                 case Entity.EntityType.ShotgunPellet:
                                                     ent = (ShotgunPellet)netEnt.ToEntity();
@@ -165,31 +163,29 @@ namespace DungeonCrawler.Networking
                                                     break;
                                                 default:
                                                     ent = null;
-                                                    Console.WriteLine("Unhandled Entity Type " + netEnt.type);
+                                                    Console.WriteLine("Unhandled Entity Type " + netEnt.Type);
                                                     break;
                                             }
-                                            if(ent != null)
+                                            if (ent != null)
                                                 newEntities.Add(ent.Id, ent);
                                         }
+                                        entities = newEntities;
                                     }
                                     //entitiesforDestruction
                                     length = (int)BitConverter.ToInt32(msg.ReadBytes(4), 0);
                                     if (length > 0)
                                     {
-                                        mStream = new MemoryStream(msg.ReadBytes(length));
-                                        mStream.Position = 0;
-                                        List<int> newEntsForDestruction = binFormatter.Deserialize(mStream) as List<int>;
+
+                                        List<int> newEntsForDestruction = MessagePackSerializer.Deserialize<List<int>>(msg.ReadBytes(length));
                                         this.entitiesForDestruction = newEntsForDestruction;
                                     }
-                                    //realTimeActions
-                                    length = (int)BitConverter.ToInt32(msg.ReadBytes(4), 0);
-                                    if (length > 0)
-                                    {
-                                        mStream = new MemoryStream(msg.ReadBytes(length));
-                                        mStream.Position = 0;
-                                        ParallelAction newRTActions = binFormatter.Deserialize(mStream) as ParallelAction;
-                                        realTimeActions = newRTActions;
-                                    }
+                                    ////realTimeActions
+                                    //length = (int)BitConverter.ToInt32(msg.ReadBytes(4), 0);
+                                    //if (length > 0)
+                                    //{
+                                    //    ParallelAction newRTActions = MessagePackSerializer.Deserialize<ParallelAction>(msg.ReadBytes(length));
+                                    //    realTimeActions = newRTActions;
+                                    //}
                                     break;
                             default:
                                     Console.WriteLine("Unhandled Message Type: " + type);
@@ -199,6 +195,10 @@ namespace DungeonCrawler.Networking
                         break;
                 }
                 client.Recycle(msg);
+            }
+            if (ready)
+            {
+                SendMessage(((InGameState)Game.states[Game.currentState]).playerId, MessageType.StateRequest, new byte[0]);
             }
         }
 
@@ -212,19 +212,9 @@ namespace DungeonCrawler.Networking
             client.SendMessage(msg, client.ServerConnection, NetDeliveryMethod.UnreliableSequenced);
         }
 
-        public void OnMove(int id, Vector2f delta)
+        public virtual void OnMove(int id, Vector2f delta)
         {
-            MemoryStream mStream = new MemoryStream();
-            byte[] deltaBytes = new byte[4];
-            binFormatter.Serialize(mStream, delta.X);
-            mStream.SetLength(2);
-            deltaBytes[0] = mStream.ToArray()[0];
-            deltaBytes[1] = mStream.ToArray()[1];
-
-            binFormatter.Serialize(mStream, delta.Y);
-            mStream.SetLength(2);
-            deltaBytes[2] = mStream.ToArray()[0];
-            deltaBytes[3] = mStream.ToArray()[1];
+            byte[] deltaBytes = BitConverter.GetBytes(delta.X).Concat(BitConverter.GetBytes(delta.Y)).ToArray();
 
             SendMessage(id, MessageType.Move, deltaBytes);
         }

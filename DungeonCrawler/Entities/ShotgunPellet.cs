@@ -86,20 +86,20 @@ namespace DungeonCrawler.Entities
         public override NetEntity ToNetEntity()
         {
             NetShotgunPellet netShotgunPellet = new NetShotgunPellet();
-            netShotgunPellet.flags = flags;
+            netShotgunPellet.Flags = flags;
             netShotgunPellet.Id = id;
             netShotgunPellet.ParentId = parentId;
-            netShotgunPellet.moveDeltaX = moveDelta.X;
-            netShotgunPellet.moveDeltaY = moveDelta.Y;
-            netShotgunPellet.rectX = rect.Position.X;
-            netShotgunPellet.rectY = rect.Position.Y;
-            netShotgunPellet.rectWidth = rect.Size.X;
-            netShotgunPellet.rectHeight = rect.Size.Y;
+            netShotgunPellet.MoveDeltaX = moveDelta.X;
+            netShotgunPellet.MoveDeltaY = moveDelta.Y;
+            netShotgunPellet.RectX = rect.Position.X;
+            netShotgunPellet.RectY = rect.Position.Y;
+            netShotgunPellet.RectWidth = rect.Size.X;
+            netShotgunPellet.RectHeight = rect.Size.Y;
             netShotgunPellet.damagePoints = damagePoints;
             netShotgunPellet.age = age;
             netShotgunPellet.velocityX = velocity.X;
             netShotgunPellet.velocityY = velocity.Y;
-            netShotgunPellet.type = type;
+            netShotgunPellet.Type = type;
 
             return netShotgunPellet;
         }

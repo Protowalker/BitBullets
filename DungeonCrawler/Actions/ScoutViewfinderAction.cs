@@ -1,4 +1,5 @@
-﻿using System;
+﻿using MessagePack;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -6,7 +7,8 @@ using System.Threading.Tasks;
 
 namespace DungeonCrawler.Actions
 {
-    class ScoutViewfinderAction : Action
+    [MessagePackObject]
+    public class ScoutViewfinderAction : Action
     {
         int parentId;
 

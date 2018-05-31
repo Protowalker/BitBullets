@@ -1,4 +1,6 @@
-﻿using Lidgren.Network;
+﻿using DungeonCrawler.Characters;
+using Lidgren.Network;
+using MessagePack;
 using SFML.System;
 using System;
 using System.Collections.Generic;
@@ -60,6 +62,7 @@ namespace DungeonCrawler.Networking
                                 Player player = new Player();
                                 player.Init();
                                 int playerId = player.Id;
+                                player.SetCurrentCharacter(new Scout(playerId));
                                 announceMsg.Write((byte)MessageType.NewPlayer);
                                 announceMsg.Write(-1);
                                 announceMsg.Write(playerId);
@@ -85,12 +88,15 @@ namespace DungeonCrawler.Networking
                                 case MessageType.Move:
                                     Vector2f moveDelta = new Vector2f
                                     {
-                                        X = (float)binFormatter.Deserialize(new MemoryStream(msg.ReadBytes(2))),
-                                        Y = (float)binFormatter.Deserialize(new MemoryStream(msg.ReadBytes(2)))
+                                        X = BitConverter.ToSingle(msg.ReadBytes(4), 0),
+                                        Y = BitConverter.ToSingle(msg.ReadBytes(4), 0)
                                     };
                                     Entities[senderId].Move(moveDelta);
                                     break;
                                 case MessageType.Action:
+                                    break;
+                                case MessageType.StateRequest:
+                                    SendDeltaState();
                                     break;
                                 default:
                                     Console.WriteLine("Unhandled Data Message Type: " + type);
@@ -115,54 +121,8 @@ namespace DungeonCrawler.Networking
                         Console.WriteLine("Unhandled Network message type: " + msg.MessageType);
                         break;
                 }
+                server.Recycle(msg);
             }
-            server.Recycle(msg);
-
-            List<byte> deltaStateMsg = new List<byte>();
-
-            MemoryStream mStream = new MemoryStream();
-            byte[] length;
-
-            ////quadtree
-            //binFormatter.Serialize(mStream, quadTree);
-            //binFormatter.Serialize(lengthMStream, (int)mStream.Length);
-            //lengthMStream.SetLength(3);
-
-            //deltaStateMsg.AddRange(lengthMStream.ToArray());
-            //deltaStateMsg.AddRange(mStream.ToArray());
-
-            //entities
-            List<NetEntity> netEnts = new List<NetEntity>();
-            foreach(Entity ent in Entities.Values)
-            {
-                netEnts.Add(ent.ToNetEntity());
-            }
-
-            binFormatter.Serialize(mStream, netEnts);
-            length = BitConverter.GetBytes(mStream.Length);
-
-            deltaStateMsg.AddRange(length);
-            deltaStateMsg.AddRange(mStream.ToArray());
-
-            //entitiesForDestruction
-            mStream = new MemoryStream();
-
-            binFormatter.Serialize(mStream, EntitiesForDestruction);
-            length = BitConverter.GetBytes((int)mStream.Length);
-
-            deltaStateMsg.AddRange(length);
-            deltaStateMsg.AddRange(mStream.ToArray());
-
-            //realTimeActions
-            mStream = new MemoryStream();
-
-            binFormatter.Serialize(mStream, RealTimeActions);
-            length = BitConverter.GetBytes((int)mStream.Length);
-
-            deltaStateMsg.AddRange(length);
-            deltaStateMsg.AddRange(mStream.ToArray());
-
-            SendMessage(-1, MessageType.DeltaState, deltaStateMsg.ToArray());
         }
 
         public void AddPlayer(int id)
@@ -180,6 +140,53 @@ namespace DungeonCrawler.Networking
             snapshots.Remove(playerId);
         }
 
+        public void SendDeltaState()
+        {
+            List<byte> deltaStateMsg = new List<byte>();
+
+            byte[] data;
+            byte[] length;
+
+            ////quadtree
+            //NetQuadTree netTree = quadTree.ToNetQuadTree();
+            //data = MessagePackSerializer.Serialize(netTree);
+            //length = BitConverter.GetBytes(data.Length);
+
+            //deltaStateMsg.AddRange(length);
+            //deltaStateMsg.AddRange(data);
+
+            //entities
+            List<NetEntity> netEnts = new List<NetEntity>();
+            foreach (Entity ent in Entities.Values)
+            {
+                netEnts.Add(ent.ToNetEntity());
+            }
+
+            data = MessagePackSerializer.Serialize(netEnts);
+            length = BitConverter.GetBytes(data.Length);
+
+            deltaStateMsg.AddRange(length);
+            deltaStateMsg.AddRange(data);
+
+            //entitiesForDestruction
+
+            data = MessagePackSerializer.Serialize(EntitiesForDestruction);
+            length = BitConverter.GetBytes(data.Length);
+
+            deltaStateMsg.AddRange(length);
+            deltaStateMsg.AddRange(data);
+
+            //realTimeActions
+
+            data = MessagePackSerializer.Serialize(RealTimeActions);
+            length = BitConverter.GetBytes(data.Length);
+
+            deltaStateMsg.AddRange(length);
+            deltaStateMsg.AddRange(data);
+
+            SendMessage(-1, MessageType.DeltaState, deltaStateMsg.ToArray());
+        }
+
         public override void SendMessage(int id, MessageType type, byte[] data)
         {
             NetOutgoingMessage msg = server.CreateMessage();
@@ -188,12 +195,12 @@ namespace DungeonCrawler.Networking
             msg.Write(data);
             switch (type) {
                 default:
-                    server.SendToAll(msg, NetDeliveryMethod.ReliableOrdered);
+                    server.SendToAll(msg, NetDeliveryMethod.ReliableSequenced);
                     break;
             }
         }
 
-        public new void OnMove(int senderId, Vector2f delta)
+        public override void OnMove(int senderId, Vector2f delta)
         {
 
         }

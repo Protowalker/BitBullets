@@ -1,4 +1,5 @@
-﻿using System;
+﻿using MessagePack;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -6,8 +7,8 @@ using System.Threading.Tasks;
 
 namespace DungeonCrawler.Actions
 {
-    [Serializable]
-    class SequenceAction : CompositeAction
+    [MessagePackObject]
+    public class SequenceAction : CompositeAction
     {
         public override void Update(float elapsed)
         {

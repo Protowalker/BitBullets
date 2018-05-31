@@ -74,8 +74,6 @@ namespace DungeonCrawler
 
                     intersecting = (Game.states[Game.currentState].netState.Entities[id].rect.GetGlobalBounds().Intersects(rect.GetGlobalBounds(), out overlap));
 
-                    Console.WriteLine("X: " + overlap);
-
                     if (intersecting)
                     {
                         if (Game.states[Game.currentState].netState.Entities[id].rect.GetGlobalBounds().Left + Game.states[Game.currentState].netState.Entities[id].rect.Size.X > overlap.Left + overlap.Width) //if the player is to the right of the shape
@@ -99,8 +97,6 @@ namespace DungeonCrawler
                     if ((Game.states[Game.currentState].netState.Entities[id].flags & Entity.Flags.WALL) != Entity.Flags.WALL) continue;
 
                     intersecting = Game.states[Game.currentState].netState.Entities[id].rect.GetGlobalBounds().Intersects(rect.GetGlobalBounds(), out overlap);
-
-                    Console.WriteLine("Y: " + overlap);
 
                     if (intersecting)
                     {
@@ -137,19 +133,19 @@ namespace DungeonCrawler
         public override NetEntity ToNetEntity()
         {
             NetPlayer netPlayer = new NetPlayer();
-            netPlayer.flags = flags;
+            netPlayer.Flags = flags;
             netPlayer.Id = id;
             netPlayer.ParentId = parentId;
-            netPlayer.moveDeltaX = moveDelta.X;
-            netPlayer.moveDeltaY = moveDelta.Y;
-            netPlayer.rectX = rect.Position.X;
-            netPlayer.rectY = rect.Position.Y;
-            netPlayer.rectWidth = rect.Size.X;
-            netPlayer.rectHeight = rect.Size.Y;
-            netPlayer.currentCharacter = currentCharacter;
-            netPlayer.health = health;
-            netPlayer.angle = (float)Math.Atan2(direction.Y, direction.X);
-            netPlayer.type = type;
+            netPlayer.MoveDeltaX = moveDelta.X;
+            netPlayer.MoveDeltaY = moveDelta.Y;
+            netPlayer.RectX = rect.Position.X;
+            netPlayer.RectY = rect.Position.Y;
+            netPlayer.RectWidth = rect.Size.X;
+            netPlayer.RectHeight = rect.Size.Y;
+            netPlayer.CurrentCharacter = currentCharacter;
+            netPlayer.Health = health;
+            netPlayer.Angle = (float)Math.Atan2(direction.Y, direction.X);
+            netPlayer.Type = type;
 
             return netPlayer;
         }

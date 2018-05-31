@@ -1,4 +1,5 @@
-﻿using SFML.Graphics;
+﻿using MessagePack;
+using SFML.Graphics;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -7,17 +8,17 @@ using System.Threading.Tasks;
 
 namespace DungeonCrawler.Networking.NetEntities
 {
-    [Serializable]
-    class NetWall : NetEntity
+    [MessagePackObject]
+    public class NetWall : NetEntity
     {
         public override Entity ToEntity()
         {
-            RectangleShape rect = new RectangleShape(new SFML.System.Vector2f(rectX, rectY));
-            rect.Position = new SFML.System.Vector2f(rectWidth, rectHeight);
+            RectangleShape rect = new RectangleShape(new SFML.System.Vector2f(RectX, RectY));
+            rect.Position = new SFML.System.Vector2f(RectWidth, RectHeight);
             Wall wall = new Wall(rect);
-            wall.Id = id;
-            wall.ParentId = parentId;
-            wall.flags = flags;
+            wall.Id = Id;
+            wall.ParentId = ParentId;
+            wall.flags = Flags;
 
             return wall;
         }

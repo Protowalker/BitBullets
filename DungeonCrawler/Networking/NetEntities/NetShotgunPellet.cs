@@ -1,4 +1,5 @@
 ﻿using DungeonCrawler.Entities;
+using MessagePack;
 using SFML.Graphics;
 using System;
 using System.Collections.Generic;
@@ -8,8 +9,8 @@ using System.Threading.Tasks;
 
 namespace DungeonCrawler.Networking.NetEntities
 {
-    [Serializable]
-    class NetShotgunPellet : NetEntity
+    [MessagePackObject]
+    public class NetShotgunPellet : NetEntity
     {
         internal float damagePoints = 10;
         internal int age = 0;
@@ -19,15 +20,15 @@ namespace DungeonCrawler.Networking.NetEntities
 
         public override Entity ToEntity()
         {
-            ShotgunPellet pellet = new ShotgunPellet(new SFML.System.Vector2f(rectX, rectY), new SFML.System.Vector2f(velocityX, velocityY), parentId);
+            ShotgunPellet pellet = new ShotgunPellet(new SFML.System.Vector2f(RectX, RectY), new SFML.System.Vector2f(velocityX, velocityY), ParentId);
 
             RectangleShape rect = new RectangleShape();
-            rect.Position = new SFML.System.Vector2f(rectX, rectY);
-            rect.Size = new SFML.System.Vector2f(rectWidth, rectHeight);
+            rect.Position = new SFML.System.Vector2f(RectX, RectY);
+            rect.Size = new SFML.System.Vector2f(RectWidth, RectHeight);
 
             pellet.rect = rect;
 
-            pellet.moveDelta = new SFML.System.Vector2f(moveDeltaX, moveDeltaY);
+            pellet.moveDelta = new SFML.System.Vector2f(MoveDeltaX, MoveDeltaY);
 
             pellet.damagePoints = damagePoints;
             pellet.age = age;
