@@ -61,20 +61,29 @@ namespace DungeonCrawler.States
 
         }
 
+
         public override void Update()
         {
             netState.Update();
             if (netState.ready)
             {
-                ControlPlayer(((Player)netState.Entities[playerId]).currentCharacter.MovementSpeed);
-                if (InputHandler.MouseButtonPressed(Mouse.Button.Left))
+                if (Game.app.HasFocus())
                 {
-                    ((Player)netState.Entities[playerId]).OnPrimaryFire();
+                    Input();
                 }
-                if (InputHandler.MouseButtonDown(Mouse.Button.Right))
-                {
-                    ((Player)netState.Entities[playerId]).OnSecondaryFire();
-                }
+            }
+        }
+
+        private void Input()
+        {
+            ControlPlayer(((Player)netState.Entities[playerId]).currentCharacter.MovementSpeed);
+            if (InputHandler.MouseButtonPressed(Mouse.Button.Left))
+            {
+                ((Player)netState.Entities[playerId]).OnPrimaryFire();
+            }
+            if (InputHandler.MouseButtonDown(Mouse.Button.Right)) 
+            {
+                ((Player)netState.Entities[playerId]).OnSecondaryFire();
             }
         }
 
