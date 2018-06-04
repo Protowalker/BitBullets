@@ -36,6 +36,8 @@ namespace DungeonCrawler
 
         public RectangleShape rect = new RectangleShape();
 
+        public Vector2f direction = new Vector2f();
+
         public delegate void MoveHandler(int id, Vector2f delta);
         public delegate void DieHandler(Entity ent, int timeOfDeath);
         public event MoveHandler MoveEvent = delegate { };

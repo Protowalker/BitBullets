@@ -15,10 +15,13 @@ namespace DungeonCrawler.Actions
     {
 
         [SerializationConstructor]
-        public ScoutShotgunAction(bool finished, int id) : base(id)
+        public ScoutShotgunAction()
         {
-            this.id = id;
-            this.finished = finished;
+
+        }
+        public ScoutShotgunAction(int id) : base(id)
+        {
+            this.finished = true;
         }
 
         public override void Update(float elapsed)
@@ -32,6 +35,7 @@ namespace DungeonCrawler.Actions
 
                 Vector2f randVelocity = new Vector2f((float)Math.Cos(angle), (float)Math.Sin(angle));
                 ShotgunPellet pellet = new ShotgunPellet(player.rect.Position, randVelocity, player.Id);
+                pellet.Init();
             }
         }
     }

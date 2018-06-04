@@ -74,9 +74,14 @@ namespace DungeonCrawler.Collision
 
             isPartitioned = true;
 
-            foreach (int item in items)
+            for(int i = 0; i < items.Count; i++)
             {
-                if (InsertInChild(item)) removalList.Add(item);
+                if (!Game.states[Game.currentState].netState.Entities.ContainsKey(items[i]))
+                {
+                    RemoveItem(i);
+                    continue;
+                }
+                if (InsertInChild(items[i])) removalList.Add(items[i]);
             }
 
             foreach (int item in removalList)
@@ -104,9 +109,14 @@ namespace DungeonCrawler.Collision
             if (rect.Intersects(colRect))
             {
                 // test the point in each item
-                foreach (int item in items)
+                for(int i = 0; i < items.Count; i++)
                 {
-                    if (Game.states[Game.currentState].netState.Entities[item].rect.GetGlobalBounds().Intersects(colRect)) itemsFound.Add(item);
+                    if (!Game.states[Game.currentState].netState.Entities.ContainsKey(items[i]))
+                    {
+                        RemoveItem(i);
+                        continue;
+                    }
+                    if (Game.states[Game.currentState].netState.Entities[items[i]].rect.GetGlobalBounds().Intersects(colRect)) itemsFound.Add(items[i]);
                 }
 
                 // query all subtrees
@@ -176,6 +186,12 @@ namespace DungeonCrawler.Collision
         {
             int id = items[i];
 
+            if (!Game.states[Game.currentState].netState.Entities.ContainsKey(id))
+            {
+                items.RemoveAt(i);
+                return;
+            }
+
             RemoveItem(i);
             parent.Insert(id);
 
@@ -187,12 +203,21 @@ namespace DungeonCrawler.Collision
 
         internal void RemoveItem(int i)
         {
-            Game.states[Game.currentState].netState.Entities[items[i]].MoveEvent -= new Entity.MoveHandler(ItemMove);
+            if (Game.states[Game.currentState].netState.Entities.ContainsKey(items[i]))
+            {
+                Game.states[Game.currentState].netState.Entities[items[i]].MoveEvent -= new Entity.MoveHandler(ItemMove);
+            }
             items.RemoveAt(i);
         }
 
         private bool PushItemDown(int i)
         {
+            if (!Game.states[Game.currentState].netState.Entities.ContainsKey(items[i]))
+            {
+                items.RemoveAt(i);
+                return false;
+            }
+
             if (InsertInChild(items[i]))
             {
                 RemoveItem(i);
@@ -209,7 +234,6 @@ namespace DungeonCrawler.Collision
             {
                 return false;
             }
-
             FloatRect rect = Game.states[Game.currentState].netState.Entities[item].rect.GetGlobalBounds();
 
             if (topLeftNode.ContainsRect(rect))

@@ -60,6 +60,7 @@ namespace DungeonCrawler.Actions
                 currentState = StateType.InGameState;
                 states.Add(StateType.InGameState, inGameState);
             }
+
             app.Closed += new EventHandler(onClose);
             view = app.GetView();
             view.Size = (Vector2f)resolution * .25f;

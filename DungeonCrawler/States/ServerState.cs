@@ -27,6 +27,7 @@ namespace DungeonCrawler.States
         public override void Init()
         {
             GenerateCollisionMap();
+            ((NetServerGameState)netState).Init();
         }
 
         public override void Render()
@@ -39,6 +40,8 @@ namespace DungeonCrawler.States
                 netState.Update();
             }
         }
+
+
 
         private void GenerateCollisionMap()
         {

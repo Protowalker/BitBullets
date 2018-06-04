@@ -16,9 +16,10 @@ namespace DungeonCrawler.Networking
     {
         NetServer server;
 
+        int sequence = 0;
 
         //32 snapshots are stored for each player. These are the 32 previous gamestates and are used for delta-ing the new gamestates.
-        Dictionary<int, NetGameState[]> snapshots = new Dictionary<int, NetGameState[]>();
+        Dictionary<int, List<Entity>[]> snapshots = new Dictionary<int, List<Entity>[]>();
 
         public NetServerGameState(int port)
         {
@@ -28,8 +29,12 @@ namespace DungeonCrawler.Networking
             config.EnableMessageType(NetIncomingMessageType.ConnectionLatencyUpdated);
 
             server = new NetServer(config);
+        }
+
+        public void Init()
+        {
             server.Start();
-            if(!server.UPnP.ForwardPort(port, "BitBullets Server")) Console.WriteLine("UPnP not working; port needs to be manually forwarded!");
+            if (!server.UPnP.ForwardPort(server.Port, "BitBullets Server")) Console.WriteLine("UPnP not working; port needs to be manually forwarded!");
             ready = true;
         }
 
@@ -67,10 +72,7 @@ namespace DungeonCrawler.Networking
                                 player.Init();
                                 int playerId = player.Id;
                                 player.SetCurrentCharacter(new Scout(playerId));
-                                announceMsg.Write((byte)MessageType.NewPlayer);
-                                announceMsg.Write(-1);
-                                announceMsg.Write(playerId);
-                                server.SendMessage(announceMsg, msg.SenderConnection, NetDeliveryMethod.ReliableOrdered);
+                                SendMessage(playerId, MessageType.NewPlayer, new byte[0], msg.SenderConnection, NetDeliveryMethod.ReliableOrdered);
                                 AddPlayer(playerId);
                                 break;
                             case NetConnectionStatus.Disconnected:
@@ -89,7 +91,7 @@ namespace DungeonCrawler.Networking
                     case NetIncomingMessageType.Data:
                         {
                             MessageType type = (MessageType)msg.ReadByte();
-                            int sequence = msg.ReadInt32();
+                            int lastAckSequence = msg.ReadInt32();
                             int senderId = msg.ReadInt32();
                             switch (type)
                             {
@@ -102,7 +104,7 @@ namespace DungeonCrawler.Networking
                                     }
                                     break;
                                 case MessageType.StateRequest:
-                                    SendDeltaState(msg.SenderConnection);
+                                    SendDeltaState(senderId, lastAckSequence, msg.SenderConnection);
                                     break;
                                 default:
                                     Console.WriteLine("Unhandled Data Message Type: " + type);
@@ -129,25 +131,43 @@ namespace DungeonCrawler.Networking
                 }
                 server.Recycle(msg);
             }
+            sequence += 1;
         }
 
         public void AddPlayer(int playerId)
         {
-            snapshots.Add(playerId, new NetGameState[32]);
-            for(int i = 0; i < snapshots[playerId].Length; i++)
+            snapshots.Add(playerId, new List<Entity>[32]);
+            for(int i = 0; i < 32; i++)
             {
-                snapshots[playerId][i] = new NetGameState();
+                snapshots[playerId][i] = new List<Entity>();
             }
         }
 
         public void RemovePlayer(int playerId)
         {
             snapshots.Remove(playerId);
+            Entities.Remove(playerId);
+            quadTree.RemoveItem(playerId);
         }
 
-        public void SendDeltaState(NetConnection client)
+        public void SendDeltaState(int senderId, int lastAckSequence, NetConnection client)
         {
             List<byte> deltaStateMsg = new List<byte>();
+            List<Entity> lastAckState;
+
+            bool hasReset;
+            //if the client has not acknowledged at least one of the previous two delta states, empty it
+            if (lastAckSequence < sequence - 1)
+            {
+                lastAckState = new List<Entity>();
+                hasReset = true;
+            } else //if it has acknowledged a previous one, use that instead.
+            {
+                lastAckState = snapshots[senderId][lastAckSequence % 32];
+                hasReset = false;
+            }
+            //first thing sent is a bool saying whether we have reset the state
+            deltaStateMsg.AddRange(BitConverter.GetBytes(hasReset));
 
             byte[] data;
             byte[] length;
@@ -161,10 +181,20 @@ namespace DungeonCrawler.Networking
             //deltaStateMsg.AddRange(data);
 
             //entities
-            List<NetEntity> netEnts = new List<NetEntity>();
+            Dictionary<int, NetEntity> netEnts = new Dictionary<int, NetEntity>();
             foreach (Entity ent in Entities.Values)
             {
-                netEnts.Add(ent.ToNetEntity());
+                if (!lastAckState.Contains(ent))
+                {
+                    netEnts.Add(ent.Id, ent.ToNetEntity());
+                }
+            }
+            foreach (Entity ent in lastAckState)
+            {
+                if (!Entities.ContainsKey(ent.Id))
+                {
+                    netEnts.Add(ent.Id, null);
+                }
             }
 
             data = LZ4MessagePackSerializer.Serialize(netEnts);
@@ -197,6 +227,7 @@ namespace DungeonCrawler.Networking
         {
             NetOutgoingMessage msg = server.CreateMessage();
             msg.Write((byte)type);
+            msg.Write(sequence);
             msg.Write(id);
             msg.Write(data);
             switch (type) {
@@ -210,6 +241,7 @@ namespace DungeonCrawler.Networking
         {
             NetOutgoingMessage msg = server.CreateMessage();
             msg.Write((byte)type);
+            msg.Write(sequence);
             msg.Write(id);
             msg.Write(data);
             switch (type)

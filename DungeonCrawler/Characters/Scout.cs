@@ -18,7 +18,7 @@ namespace DungeonCrawler.Characters
         [Key(9)]
         public override float MaxHealth => 175;
         [Key(10)]
-        public override float MovementSpeed => .3f;
+        public override float MovementSpeed => .1f;
         [Key(11)]
         public override float FOV => 100;
 
@@ -32,8 +32,6 @@ namespace DungeonCrawler.Characters
         {
             this.parentId = playerId;
             weapons[0] = new Weapon();
-            weapons[0].primaryFire = new ScoutShotgunAction(true, playerId);
-            weapons[0].secondaryFire = new ScoutViewfinderAction(true, playerId);
         }
 
         public override void OnPrimaryFire()

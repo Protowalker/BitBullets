@@ -31,8 +31,8 @@ namespace DungeonCrawler.Handlers
 
         public static bool MouseButtonPressed(Mouse.Button button)
         {
-            if (!buttonDown.ContainsKey(button)) buttonDown.Add(button, true);
-            if (!buttonPressed.ContainsKey(button)) buttonPressed.Add(button, true);
+            if (!buttonDown.ContainsKey(button)) buttonDown.Add(button, Mouse.IsButtonPressed(button));
+            if (!buttonPressed.ContainsKey(button)) buttonPressed.Add(button, Mouse.IsButtonPressed(button));
             bool pressed = buttonPressed[button];
             if (pressed) buttonPressed[button] = false;
             return pressed;

@@ -56,26 +56,26 @@ namespace DungeonCrawler.Entities
 
         public override void Update(float deltaTime)
         {
-            List<int> collided = Game.states[Game.currentState].netState.quadTree.GetItems(rect.GetGlobalBounds());
+            NetGameState netState = Game.states[Game.currentState].netState;
+
+            List<int> collided = netState.quadTree.GetItems(rect.GetGlobalBounds());
 
             Move(velocity);
 
             foreach(int id in collided)
             {
-                    if ((Game.states[Game.currentState].netState.Entities[id].flags & Entity.Flags.PLAYER) == Entity.Flags.PLAYER  && Game.states[Game.currentState].netState.Entities[id].Id != ParentId)
+                    if ((netState.Entities[id].flags & Entity.Flags.PLAYER) == Entity.Flags.PLAYER  && netState.Entities[id].Id != ParentId)
                     {
-                    Player player = (Player)Game.states[Game.currentState].netState.Entities[id];
-                    player.TakeDamage(damagePoints);
-                    Destroy();
+                        Player player = (Player)netState.Entities[id];
+                        player.TakeDamage(damagePoints);
+                        Destroy();
                     }
-                    else if ((Game.states[Game.currentState].netState.Entities[id].flags & Entity.Flags.WALL) == Entity.Flags.WALL)
+                    else if ((netState.Entities[id].flags & Entity.Flags.WALL) == Entity.Flags.WALL)
                     {
                             Destroy();
                             break;
                     }
             }
-
-            //Console.WriteLine(rect.Position);
 
             rect.Position += moveDelta;
             moveDelta = new Vector2f();

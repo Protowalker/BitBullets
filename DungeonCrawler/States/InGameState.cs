@@ -75,18 +75,18 @@ namespace DungeonCrawler.States
 
         private void Input()
         {
-            ControlPlayer(((Player)netState.Entities[playerId]).currentCharacter.MovementSpeed);
+            ControlPlayer();
             if (InputHandler.MouseButtonPressed(Mouse.Button.Left))
             {
-                ((Player)netState.Entities[playerId]).OnPrimaryFire();
+                netState.RealTimeActions.Add(new ScoutShotgunAction(playerId));
             }
             if (InputHandler.MouseButtonDown(Mouse.Button.Right)) 
             {
-                ((Player)netState.Entities[playerId]).OnSecondaryFire();
+                netState.RealTimeActions.Add(new ScoutShotgunAction(playerId));
             }
         }
 
-        private void ControlPlayer(float playerSpeed)
+        private void ControlPlayer()
         {
             
 
@@ -96,7 +96,7 @@ namespace DungeonCrawler.States
                 netState.RealTimeActions.Add(new MoveAction(playerId, -1, 0));
             }
 
-            if (Keyboard.IsKeyPressed(Keyboard.Key.D))
+            else if (Keyboard.IsKeyPressed(Keyboard.Key.D))
             {
                 netState.RealTimeActions.Add(new MoveAction(playerId, 1, 0));
             }
@@ -107,7 +107,7 @@ namespace DungeonCrawler.States
                 netState.RealTimeActions.Add(new MoveAction(playerId, 0, -1));
             }
 
-            if (Keyboard.IsKeyPressed(Keyboard.Key.S))
+            else if (Keyboard.IsKeyPressed(Keyboard.Key.S))
             {
                 netState.RealTimeActions.Add(new MoveAction(playerId, 0, 1));
             }
@@ -194,8 +194,8 @@ namespace DungeonCrawler.States
             Vector2f mousePos = Game.app.MapPixelToCoords(new Vector2i(e.X, e.Y));
             Vector2f relPos = mousePos - netState.Entities[playerId].rect.Position;
             float angle = (float)Math.Atan2(relPos.Y, relPos.X);
-            ((Player)netState.Entities[playerId]).direction = new Vector2f((float)Math.Cos(angle), (float)Math.Sin(angle));
-            //Game.player.direction = relPos;
+            netState.RealTimeActions.Add(new ChangeDirectionAction(playerId, angle));
+
         }
     }
 }
