@@ -29,10 +29,10 @@ namespace DungeonCrawler.Networking
         // 3-byte-long realTimeActions length in bytes
         // realTimeActions
 
+        int sequence = 0;
 
         public enum MessageType
         {
-            Move,
             Action,
             DeltaState,
             NewPlayer,
@@ -52,7 +52,7 @@ namespace DungeonCrawler.Networking
         ParallelAction realTimeActions = new ParallelAction();
         public ParallelAction RealTimeActions { get => realTimeActions; private set => realTimeActions = value; }
 
-        public static BinaryFormatter binFormatter = new BinaryFormatter();
+        public List<Actions.Action> actionsForSending = new List<Actions.Action>();
 
         public bool connected;
         public bool ready;
@@ -60,18 +60,24 @@ namespace DungeonCrawler.Networking
         public NetGameState()
         {
             quadTree = new QuadTree(new FloatRect(-10000000, -100000000, 1000000000, 1000000000), 2);
+        }
+
+        public NetGameState(string host, int port)
+        {
+            quadTree = new QuadTree(new FloatRect(-10000000, -100000000, 1000000000, 1000000000), 2);
 
             NetPeerConfiguration config = new NetPeerConfiguration("BitBullets");
+            config.SimulatedLoss = 0f;
             client = new NetClient(config);
             client.Start();
-            client.Connect("localhost", 14242);
+            client.Connect(host, port);
         }
 
         public void Update()
         {
             ProcessMessages();
 
-            //realTimeActions.Update(Game.deltaClock.ElapsedTime.AsMilliseconds());
+            realTimeActions.Update(Game.deltaClock.ElapsedTime.AsMilliseconds());
             foreach (Entity ent in Entities.Values)
             {
                 ent.Update(Game.deltaClock.ElapsedTime.AsMilliseconds());
@@ -89,7 +95,6 @@ namespace DungeonCrawler.Networking
 
         protected virtual void ProcessMessages()
         {
-
             NetIncomingMessage msg;
             while ((msg = client.ReadMessage()) != null)
             {
@@ -113,6 +118,7 @@ namespace DungeonCrawler.Networking
 
                     case NetIncomingMessageType.Data:
                     {
+                            Console.WriteLine(msg.LengthBytes);
                         MessageType type = (MessageType)msg.ReadByte();
                         int senderId = msg.ReadInt32();
                         switch (type)
@@ -123,7 +129,7 @@ namespace DungeonCrawler.Networking
                                     player.Init();
                                     ((InGameState)Game.states[Game.currentState]).playerId = msg.ReadInt32();
                                     connected = true;
-                                    SendMessage(((InGameState)Game.states[Game.currentState]).playerId, MessageType.StateRequest, new byte[0]);
+                                    SendMessage(((InGameState)Game.states[Game.currentState]).playerId, MessageType.StateRequest, new byte[0], NetDeliveryMethod.ReliableOrdered);
                                 break;
 
                             case MessageType.DeltaState:
@@ -141,7 +147,7 @@ namespace DungeonCrawler.Networking
                                     int length = BitConverter.ToInt32(msg.ReadBytes(4), 0);
                                     if (length > 0)
                                     {
-                                        List<NetEntity> netEnts = MessagePackSerializer.Deserialize<List<NetEntity>>(msg.ReadBytes(length));
+                                        List<NetEntity> netEnts = LZ4MessagePackSerializer.Deserialize<List<NetEntity>>(msg.ReadBytes(length));
                                         Dictionary<int, Entity> newEntities = new Dictionary<int, Entity>();
                                         foreach (NetEntity netEnt in netEnts)
                                         {
@@ -150,10 +156,6 @@ namespace DungeonCrawler.Networking
                                             {
                                                 case Entity.EntityType.Player:
                                                     ent = (Player)netEnt.ToEntity();
-                                                    if(ent.Id == ((InGameState)Game.states[Game.currentState]).playerId)
-                                                    {
-                                                        ent.MoveEvent += new Entity.MoveHandler(OnMove);
-                                                    }
                                                     break;
                                                 case Entity.EntityType.ShotgunPellet:
                                                     ent = (ShotgunPellet)netEnt.ToEntity();
@@ -176,7 +178,7 @@ namespace DungeonCrawler.Networking
                                     if (length > 0)
                                     {
 
-                                        List<int> newEntsForDestruction = MessagePackSerializer.Deserialize<List<int>>(msg.ReadBytes(length));
+                                        List<int> newEntsForDestruction = LZ4MessagePackSerializer.Deserialize<List<int>>(msg.ReadBytes(length));
                                         this.entitiesForDestruction = newEntsForDestruction;
                                     }
                                     ////realTimeActions
@@ -186,6 +188,14 @@ namespace DungeonCrawler.Networking
                                     //    ParallelAction newRTActions = MessagePackSerializer.Deserialize<ParallelAction>(msg.ReadBytes(length));
                                     //    realTimeActions = newRTActions;
                                     //}
+
+                                    //When we receive a new state, send all the new actions
+                                    byte[] data;
+                                    byte[] len;
+                                    data = LZ4MessagePackSerializer.Serialize(actionsForSending);
+                                    len = BitConverter.GetBytes(data.Length);
+                                    actionsForSending.Clear();
+                                    SendMessage(((InGameState)Game.states[Game.currentState]).playerId, MessageType.Action, len.Concat(data).ToArray(), NetDeliveryMethod.UnreliableSequenced);
                                     break;
                             default:
                                     Console.WriteLine("Unhandled Message Type: " + type);
@@ -196,27 +206,21 @@ namespace DungeonCrawler.Networking
                 }
                 client.Recycle(msg);
             }
-            if (ready)
+            if (connected)
             {
-                SendMessage(((InGameState)Game.states[Game.currentState]).playerId, MessageType.StateRequest, new byte[0]);
+                SendMessage(((InGameState)Game.states[Game.currentState]).playerId, MessageType.StateRequest, new byte[0], NetDeliveryMethod.Unreliable);
             }
         }
 
-        public virtual void SendMessage(int senderId, MessageType type, byte[] data)
+        public virtual void SendMessage(int senderId, MessageType type, byte[] data, NetDeliveryMethod method)
         {
             NetOutgoingMessage msg = client.CreateMessage();
             //The Server or client will later use this type to decide how to handle the data.
             msg.Write((byte)type);
+            msg.Write(sequence);
             msg.Write(senderId);
             msg.Write(data);
-            client.SendMessage(msg, client.ServerConnection, NetDeliveryMethod.UnreliableSequenced);
-        }
-
-        public virtual void OnMove(int id, Vector2f delta)
-        {
-            byte[] deltaBytes = BitConverter.GetBytes(delta.X).Concat(BitConverter.GetBytes(delta.Y)).ToArray();
-
-            SendMessage(id, MessageType.Move, deltaBytes);
+            client.SendMessage(msg, client.ServerConnection, method);
         }
     }
 }

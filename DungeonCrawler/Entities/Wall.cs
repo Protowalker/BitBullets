@@ -15,6 +15,7 @@ namespace DungeonCrawler
     {
         public Wall(RectangleShape rect)
         {
+            moveSpeed = 0;
             id = highestId + 1;
             highestId = id;
 
@@ -30,8 +31,7 @@ namespace DungeonCrawler
 
         public override int Id { get => id; set => id = value; }
         public override int ParentId { get => parentId; set => parentId = value; }
-
-        
+        public override float moveSpeed { get; set; }
 
         public override void Destroy()
         {

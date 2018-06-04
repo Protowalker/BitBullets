@@ -22,9 +22,11 @@ namespace DungeonCrawler.Entities
 
         public override int Id { get => id; set => id = value; }
         public override int ParentId { get => parentId; set => parentId = value; }
+        public override float moveSpeed { get; set; }
 
         public ShotgunPellet(Vector2f position, Vector2f velocity, int parentId)
         {
+            moveSpeed = 5;
             rect.Size = new Vector2f(1,1);
             rect.Position = position;
             rect.FillColor = Color.Red;
@@ -100,6 +102,7 @@ namespace DungeonCrawler.Entities
             netShotgunPellet.velocityX = velocity.X;
             netShotgunPellet.velocityY = velocity.Y;
             netShotgunPellet.Type = type;
+            netShotgunPellet.MoveSpeed = moveSpeed;
 
             return netShotgunPellet;
         }

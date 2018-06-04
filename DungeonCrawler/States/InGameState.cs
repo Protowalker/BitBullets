@@ -27,12 +27,11 @@ namespace DungeonCrawler.States
 
         public int playerId;
 
-        public InGameState(TmxMap map, Texture tileset)
+        public InGameState(TmxMap map, Texture tileset, string host, int port)
         {
             this.map = map;
             this.tileset = tileset;
-            netState = new NetGameState();
-
+            netState = new NetGameState(host, port);
         }
 
         public override void Init()
@@ -94,23 +93,23 @@ namespace DungeonCrawler.States
             //Check left and right. Seperated so that collision is not checked while inside a box because of the other direction.
             if (Keyboard.IsKeyPressed(Keyboard.Key.A))
             {
-                ((Player)netState.Entities[playerId]).Move(new Vector2f(-playerSpeed, 0));
+                netState.RealTimeActions.Add(new MoveAction(playerId, -1, 0));
             }
 
             if (Keyboard.IsKeyPressed(Keyboard.Key.D))
             {
-                ((Player)netState.Entities[playerId]).Move(new Vector2f(playerSpeed, 0));
+                netState.RealTimeActions.Add(new MoveAction(playerId, 1, 0));
             }
 
             //check up and down.
             if (Keyboard.IsKeyPressed(Keyboard.Key.W))
             {
-                ((Player)netState.Entities[playerId]).Move(new Vector2f(0, -playerSpeed));
+                netState.RealTimeActions.Add(new MoveAction(playerId, 0, -1));
             }
 
             if (Keyboard.IsKeyPressed(Keyboard.Key.S))
             {
-                ((Player)netState.Entities[playerId]).Move(new Vector2f(0, playerSpeed));
+                netState.RealTimeActions.Add(new MoveAction(playerId, 0, 1));
             }
 
         }

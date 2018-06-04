@@ -42,6 +42,8 @@ namespace DungeonCrawler.Networking
         public virtual float RectWidth { get; set; }
         [Key(11)]
         public virtual float RectHeight { get; set; }
+        [Key(12)]
+        public virtual float MoveSpeed { get; set; }
 
 
         public abstract Entity ToEntity();

@@ -33,6 +33,8 @@ namespace DungeonCrawler.Networking.NetEntities
             pellet.damagePoints = damagePoints;
             pellet.age = age;
 
+            pellet.moveSpeed = MoveSpeed;
+
             return pellet;
 
         }

@@ -23,6 +23,7 @@ namespace DungeonCrawler
 
         public override int Id { get => id; set => id = value; }
         public override int ParentId { get => parentId; set => parentId = value; }
+        public override float moveSpeed { get; set; }
 
         public Player()
         {
@@ -40,13 +41,13 @@ namespace DungeonCrawler
 
         public override void Init()
         {
-            MoveEvent += new MoveHandler(Game.states[Game.currentState].netState.OnMove);
             (Game.states[Game.currentState]).netState.Entities.Add(id, this);
             (Game.states[Game.currentState]).netState.quadTree.Insert(id);
         }
 
         public void SetCurrentCharacter(Character currentCharacter)
         {
+            moveSpeed = currentCharacter.MovementSpeed;
             health = currentCharacter.MaxHealth;
             this.currentCharacter = currentCharacter;
         }
@@ -146,6 +147,7 @@ namespace DungeonCrawler
             netPlayer.Health = health;
             netPlayer.Angle = (float)Math.Atan2(direction.Y, direction.X);
             netPlayer.Type = type;
+            netPlayer.MoveSpeed = moveSpeed;
 
             return netPlayer;
         }

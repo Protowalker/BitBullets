@@ -13,8 +13,8 @@ namespace DungeonCrawler.Networking.NetEntities
     {
         public override Entity ToEntity()
         {
-            RectangleShape rect = new RectangleShape(new SFML.System.Vector2f(RectX, RectY));
-            rect.Position = new SFML.System.Vector2f(RectWidth, RectHeight);
+            RectangleShape rect = new RectangleShape(new SFML.System.Vector2f(RectWidth, RectHeight));
+            rect.Position = new SFML.System.Vector2f(RectX, RectY);
             Wall wall = new Wall(rect);
             wall.Id = Id;
             wall.ParentId = ParentId;

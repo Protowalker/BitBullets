@@ -30,7 +30,7 @@ namespace DungeonCrawler
         protected int parentId;
         public abstract int Id { get; set; }
         public abstract int ParentId { get; set; }
-
+        public abstract float moveSpeed { get; set; }
         
         internal Vector2f moveDelta = new Vector2f();
 

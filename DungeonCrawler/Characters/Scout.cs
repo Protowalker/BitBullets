@@ -33,7 +33,7 @@ namespace DungeonCrawler.Characters
             this.parentId = playerId;
             weapons[0] = new Weapon();
             weapons[0].primaryFire = new ScoutShotgunAction(true, playerId);
-            weapons[0].secondaryFire = new ScoutViewfinderAction(playerId);
+            weapons[0].secondaryFire = new ScoutViewfinderAction(true, playerId);
         }
 
         public override void OnPrimaryFire()

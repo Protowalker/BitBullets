@@ -6,6 +6,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Net;
 using System.Text;
 using System.Threading.Tasks;
 
@@ -16,16 +17,19 @@ namespace DungeonCrawler.Networking
         NetServer server;
 
 
-
         //32 snapshots are stored for each player. These are the 32 previous gamestates and are used for delta-ing the new gamestates.
         Dictionary<int, NetGameState[]> snapshots = new Dictionary<int, NetGameState[]>();
 
-        public NetServerGameState()
+        public NetServerGameState(int port)
         {
             NetPeerConfiguration config = new NetPeerConfiguration("BitBullets");
-            config.Port = 14242;
+            config.Port = port;
+            config.EnableUPnP = true;
+            config.EnableMessageType(NetIncomingMessageType.ConnectionLatencyUpdated);
+
             server = new NetServer(config);
             server.Start();
+            if(!server.UPnP.ForwardPort(port, "BitBullets Server")) Console.WriteLine("UPnP not working; port needs to be manually forwarded!");
             ready = true;
         }
 
@@ -67,9 +71,10 @@ namespace DungeonCrawler.Networking
                                 announceMsg.Write(-1);
                                 announceMsg.Write(playerId);
                                 server.SendMessage(announceMsg, msg.SenderConnection, NetDeliveryMethod.ReliableOrdered);
-                                //AddPlayer(playerId);
+                                AddPlayer(playerId);
                                 break;
                             case NetConnectionStatus.Disconnected:
+                                Console.WriteLine(msg.SenderConnection + " has Disconnected");
                                 break;
                             default:
                                 break;
@@ -78,25 +83,26 @@ namespace DungeonCrawler.Networking
 
                     case NetIncomingMessageType.ConnectionApproval:
                         break;
-
+                    case NetIncomingMessageType.ConnectionLatencyUpdated:
+                        Console.WriteLine(msg.SenderConnection.AverageRoundtripTime);
+                        break;
                     case NetIncomingMessageType.Data:
                         {
                             MessageType type = (MessageType)msg.ReadByte();
+                            int sequence = msg.ReadInt32();
                             int senderId = msg.ReadInt32();
                             switch (type)
                             {
-                                case MessageType.Move:
-                                    Vector2f moveDelta = new Vector2f
-                                    {
-                                        X = BitConverter.ToSingle(msg.ReadBytes(4), 0),
-                                        Y = BitConverter.ToSingle(msg.ReadBytes(4), 0)
-                                    };
-                                    Entities[senderId].Move(moveDelta);
-                                    break;
                                 case MessageType.Action:
+                                    int length = BitConverter.ToInt32(msg.ReadBytes(4), 0);
+                                    List<Actions.Action> actionList = LZ4MessagePackSerializer.Deserialize<List<Actions.Action>>(msg.ReadBytes(length));
+                                    foreach(Actions.Action action in actionList)
+                                    {
+                                        RealTimeActions.Add(action);
+                                    }
                                     break;
                                 case MessageType.StateRequest:
-                                    SendDeltaState();
+                                    SendDeltaState(msg.SenderConnection);
                                     break;
                                 default:
                                     Console.WriteLine("Unhandled Data Message Type: " + type);
@@ -125,13 +131,12 @@ namespace DungeonCrawler.Networking
             }
         }
 
-        public void AddPlayer(int id)
+        public void AddPlayer(int playerId)
         {
-
-            snapshots.Add(id, new NetGameState[32]);
-            for(int i = 0; i < snapshots[id].Length; i++)
+            snapshots.Add(playerId, new NetGameState[32]);
+            for(int i = 0; i < snapshots[playerId].Length; i++)
             {
-                snapshots[id][i] = new NetGameState();
+                snapshots[playerId][i] = new NetGameState();
             }
         }
 
@@ -140,7 +145,7 @@ namespace DungeonCrawler.Networking
             snapshots.Remove(playerId);
         }
 
-        public void SendDeltaState()
+        public void SendDeltaState(NetConnection client)
         {
             List<byte> deltaStateMsg = new List<byte>();
 
@@ -162,15 +167,16 @@ namespace DungeonCrawler.Networking
                 netEnts.Add(ent.ToNetEntity());
             }
 
-            data = MessagePackSerializer.Serialize(netEnts);
+            data = LZ4MessagePackSerializer.Serialize(netEnts);
             length = BitConverter.GetBytes(data.Length);
+            
 
             deltaStateMsg.AddRange(length);
             deltaStateMsg.AddRange(data);
 
             //entitiesForDestruction
 
-            data = MessagePackSerializer.Serialize(EntitiesForDestruction);
+            data = LZ4MessagePackSerializer.Serialize(EntitiesForDestruction);
             length = BitConverter.GetBytes(data.Length);
 
             deltaStateMsg.AddRange(length);
@@ -178,16 +184,16 @@ namespace DungeonCrawler.Networking
 
             //realTimeActions
 
-            data = MessagePackSerializer.Serialize(RealTimeActions);
+            data = LZ4MessagePackSerializer.Serialize(RealTimeActions);
             length = BitConverter.GetBytes(data.Length);
 
             deltaStateMsg.AddRange(length);
             deltaStateMsg.AddRange(data);
 
-            SendMessage(-1, MessageType.DeltaState, deltaStateMsg.ToArray());
+            SendMessage(-1, MessageType.DeltaState, deltaStateMsg.ToArray(), client, NetDeliveryMethod.ReliableSequenced);
         }
 
-        public override void SendMessage(int id, MessageType type, byte[] data)
+        public override void SendMessage(int id, MessageType type, byte[] data, NetDeliveryMethod method)
         {
             NetOutgoingMessage msg = server.CreateMessage();
             msg.Write((byte)type);
@@ -195,14 +201,23 @@ namespace DungeonCrawler.Networking
             msg.Write(data);
             switch (type) {
                 default:
-                    server.SendToAll(msg, NetDeliveryMethod.ReliableSequenced);
+                    server.SendToAll(msg, method);
                     break;
             }
         }
 
-        public override void OnMove(int senderId, Vector2f delta)
+        public void SendMessage(int id, MessageType type, byte[] data, NetConnection client, NetDeliveryMethod method)
         {
-
+            NetOutgoingMessage msg = server.CreateMessage();
+            msg.Write((byte)type);
+            msg.Write(id);
+            msg.Write(data);
+            switch (type)
+            {
+                default:
+                    server.SendMessage(msg, client, method);
+                    break;
+            }
         }
     }
 }

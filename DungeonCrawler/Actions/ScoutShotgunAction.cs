@@ -13,19 +13,17 @@ namespace DungeonCrawler.Actions
     [MessagePackObject]
     public class ScoutShotgunAction : Action
     {
-        [Key(1)]
-        public int playerId;
 
         [SerializationConstructor]
-        public ScoutShotgunAction(bool finished, int playerId)
+        public ScoutShotgunAction(bool finished, int id) : base(id)
         {
-            this.playerId = playerId;
+            this.id = id;
             this.finished = finished;
         }
 
         public override void Update(float elapsed)
         {
-            Player player = (Player)(Game.states[Game.currentState]).netState.Entities[playerId];
+            Player player = (Player)(Game.states[Game.currentState]).netState.Entities[id];
             Random rand = new Random();
             for(int i = 0; i < 10; i++)
             {

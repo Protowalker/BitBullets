@@ -12,7 +12,7 @@ namespace DungeonCrawler.Actions
     [MessagePackObject]
     public abstract class CompositeAction : Action
     {
-        [Key(1)]
+        [Key("actionList")]
         public List<Action> actionList = new List<Action>();
         public void Add(Action action)
         {

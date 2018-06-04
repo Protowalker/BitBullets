@@ -33,6 +33,7 @@ namespace DungeonCrawler.Networking
             RectangleShape rect = new RectangleShape();
             rect.Position = new SFML.System.Vector2f(RectX, RectY);
             rect.Size = new SFML.System.Vector2f(RectWidth, RectHeight);
+            player.moveSpeed = MoveSpeed;
 
             player.rect = rect;
 

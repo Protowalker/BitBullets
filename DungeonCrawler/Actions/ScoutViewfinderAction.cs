@@ -10,11 +10,11 @@ namespace DungeonCrawler.Actions
     [MessagePackObject]
     public class ScoutViewfinderAction : Action
     {
-        int parentId;
-
-        public ScoutViewfinderAction(int playerId)
+        [SerializationConstructor]
+        public ScoutViewfinderAction(bool finished, int id) : base(id)
         {
-            parentId = playerId;
+            this.finished = finished;
+            this.id = id;
         }
 
         public override void Update(float elapsed)

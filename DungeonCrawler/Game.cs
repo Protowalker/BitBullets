@@ -34,6 +34,8 @@ namespace DungeonCrawler.Actions
 
         static bool isServer;
 
+        static readonly float updateRate = (1000/60);
+
         public static void Init()
         {
             Console.WriteLine("Do you want to run server? y/n");
@@ -41,14 +43,20 @@ namespace DungeonCrawler.Actions
 
             if (isServer)
             {
-                ServerState serverState = new ServerState(map);
+                Console.Write("Port: ");
+                int port = Int32.Parse(Console.ReadLine());
+                ServerState serverState = new ServerState(map, port);
                 currentState = StateType.ServerState;
                 states.Add(StateType.ServerState, serverState);
                 states[currentState].Init();
             }
             else
             {
-                InGameState inGameState = new InGameState(map, tileset);
+                Console.Write("Hostname: ");
+                string host = Console.ReadLine();
+                Console.Write("Port: ");
+                int port = Int32.Parse(Console.ReadLine());
+                InGameState inGameState = new InGameState(map, tileset, host, port);
                 currentState = StateType.InGameState;
                 states.Add(StateType.InGameState, inGameState);
             }
@@ -70,7 +78,11 @@ namespace DungeonCrawler.Actions
                 app.Clear();
 
                 states[currentState].Render();
-                states[currentState].Update();
+                if (deltaClock.ElapsedTime.AsMilliseconds() >= updateRate)
+                {
+                    states[currentState].Update();
+                    deltaClock.Restart();
+                }
 
                 app.Display();
 
