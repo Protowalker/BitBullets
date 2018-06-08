@@ -10,6 +10,7 @@ namespace DungeonCrawler.States
     abstract class State
     {
         public NetGameState netState;
+        public float TickRate;
 
         public enum StateType
         {

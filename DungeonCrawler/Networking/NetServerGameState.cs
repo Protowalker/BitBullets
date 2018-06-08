@@ -18,8 +18,9 @@ namespace DungeonCrawler.Networking
 
         int sequence = 0;
 
-        //32 snapshots are stored for each player. These are the 32 previous gamestates and are used for delta-ing the new gamestates.
-        Dictionary<int, List<Entity>[]> snapshots = new Dictionary<int, List<Entity>[]>();
+        Dictionary<int, (NetConnection connection, int lastAckSequence)> clientIDs = new Dictionary<int, (NetConnection, int)>();
+        //32 snapshots are stored. These are the 32 previous gamestates and are used for delta-ing the new gamestates.
+        List<Entity>[] snapshots = new List<Entity>[32];
 
         public NetServerGameState(int port)
         {
@@ -73,9 +74,10 @@ namespace DungeonCrawler.Networking
                                 int playerId = player.Id;
                                 player.SetCurrentCharacter(new Scout(playerId));
                                 SendMessage(playerId, MessageType.NewPlayer, new byte[0], msg.SenderConnection, NetDeliveryMethod.ReliableOrdered);
-                                AddPlayer(playerId);
+                                AddPlayer(msg.SenderConnection, playerId);
                                 break;
                             case NetConnectionStatus.Disconnected:
+                                RemovePlayer(clientIDs.First(x => x.Value.connection == msg.SenderConnection).Key);
                                 Console.WriteLine(msg.SenderConnection + " has Disconnected");
                                 break;
                             default:
@@ -93,6 +95,7 @@ namespace DungeonCrawler.Networking
                             MessageType type = (MessageType)msg.ReadByte();
                             int lastAckSequence = msg.ReadInt32();
                             int senderId = msg.ReadInt32();
+                            clientIDs[senderId] = (msg.SenderConnection, lastAckSequence);
                             switch (type)
                             {
                                 case MessageType.Action:
@@ -104,7 +107,6 @@ namespace DungeonCrawler.Networking
                                     }
                                     break;
                                 case MessageType.StateRequest:
-                                    SendDeltaState(senderId, lastAckSequence, msg.SenderConnection);
                                     break;
                                 default:
                                     Console.WriteLine("Unhandled Data Message Type: " + type);
@@ -131,23 +133,24 @@ namespace DungeonCrawler.Networking
                 }
                 server.Recycle(msg);
             }
+            foreach(int clientID in clientIDs.Keys)
+            {
+                SendDeltaState(clientID, clientIDs[clientID].lastAckSequence, clientIDs[clientID].connection);
+            }
+            snapshots[sequence % 32] = Entities.Values.ToList();
             sequence += 1;
         }
 
-        public void AddPlayer(int playerId)
+        public void AddPlayer(NetConnection connection, int playerId)
         {
-            snapshots.Add(playerId, new List<Entity>[32]);
-            for(int i = 0; i < 32; i++)
-            {
-                snapshots[playerId][i] = new List<Entity>();
-            }
+            clientIDs.Add(playerId, (connection, sequence));
         }
 
         public void RemovePlayer(int playerId)
         {
-            snapshots.Remove(playerId);
             Entities.Remove(playerId);
             quadTree.RemoveItem(playerId);
+            clientIDs.Remove(playerId);
         }
 
         public void SendDeltaState(int senderId, int lastAckSequence, NetConnection client)
@@ -163,7 +166,7 @@ namespace DungeonCrawler.Networking
                 hasReset = true;
             } else //if it has acknowledged a previous one, use that instead.
             {
-                lastAckState = snapshots[senderId][lastAckSequence % 32];
+                lastAckState = snapshots[lastAckSequence % 32];
                 hasReset = false;
             }
             //first thing sent is a bool saying whether we have reset the state
@@ -193,13 +196,12 @@ namespace DungeonCrawler.Networking
             {
                 if (!Entities.ContainsKey(ent.Id))
                 {
-                    netEnts.Add(ent.Id, null);
+                    EntitiesForDestruction.Add(ent.Id);
                 }
             }
 
             data = LZ4MessagePackSerializer.Serialize(netEnts);
-            length = BitConverter.GetBytes(data.Length);
-            
+            length = BitConverter.GetBytes(data.Length);            
 
             deltaStateMsg.AddRange(length);
             deltaStateMsg.AddRange(data);

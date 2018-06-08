@@ -32,6 +32,7 @@ namespace DungeonCrawler.States
             this.map = map;
             this.tileset = tileset;
             netState = new NetGameState(host, port);
+            TickRate = 1000 / 100;
         }
 
         public override void Init()

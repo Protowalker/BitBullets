@@ -32,7 +32,7 @@ namespace DungeonCrawler
             id = Entity.highestId + 1;
             highestId = id;
 
-            rect.Origin = rect.Size / 2;
+            //rect.Origin = rect.Size / 2;
             type = EntityType.Player;
         }
 
@@ -58,7 +58,7 @@ namespace DungeonCrawler
         public override void Update(float deltaTime)
         {
             NetGameState netState = Game.states[Game.currentState].netState;
-            //moveDelta *= deltaTime;
+            moveDelta *= deltaTime;
             //Deal with movement.
             {
                 FloatRect overlap;

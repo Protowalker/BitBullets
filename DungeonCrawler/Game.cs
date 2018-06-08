@@ -79,7 +79,7 @@ namespace DungeonCrawler.Actions
                 app.Clear();
 
                 states[currentState].Render();
-                if (deltaClock.ElapsedTime.AsMilliseconds() >= updateRate)
+                if (deltaClock.ElapsedTime.AsMilliseconds() >= states[currentState].TickRate)
                 {
                     states[currentState].Update();
                     deltaClock.Restart();
