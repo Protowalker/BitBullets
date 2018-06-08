@@ -106,6 +106,9 @@ namespace DungeonCrawler.Networking
                                         RealTimeActions.Add(action);
                                     }
                                     break;
+                                case MessageType.HeartBeat:
+                                    //This message just gets sent when the client receives a state.
+                                    break;
                                 default:
                                     Console.WriteLine("Unhandled Data Message Type: " + type);
                                     break;
@@ -199,7 +202,8 @@ namespace DungeonCrawler.Networking
             }
 
             data = LZ4MessagePackSerializer.Serialize(netEnts);
-            length = BitConverter.GetBytes(data.Length);            
+            length = BitConverter.GetBytes(data.Length);
+            
 
             deltaStateMsg.AddRange(length);
             deltaStateMsg.AddRange(data);

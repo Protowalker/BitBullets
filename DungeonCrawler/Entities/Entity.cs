@@ -65,5 +65,10 @@ namespace DungeonCrawler
         public abstract void Destroy();
 
         public abstract NetEntity ToNetEntity();
+
+        public Entity Clone()
+        {
+            return (Entity)MemberwiseClone();
+        }
     }
 }

@@ -35,7 +35,8 @@ namespace DungeonCrawler.Networking
         {
             Action,
             DeltaState,
-            NewPlayer
+            NewPlayer,
+            HeartBeat
         }
         NetClient client;
 
@@ -128,6 +129,7 @@ namespace DungeonCrawler.Networking
                                     player.Init();
                                     ((InGameState)Game.states[Game.currentState]).playerId = senderId;
                                     connected = true;
+                                    
                                     break;
 
                             case MessageType.DeltaState:
@@ -223,6 +225,8 @@ namespace DungeonCrawler.Networking
                                         ready = true;
                                     }
                                     lastAckSequence = sequence;
+                                    //Tell the server we received the state
+                                    SendMessage(((InGameState)Game.states[Game.currentState]).playerId, MessageType.HeartBeat, new byte[0], NetDeliveryMethod.Unreliable);
                                     break;
                             default:
                                     Console.WriteLine("Unhandled Message Type: " + type);
