@@ -35,8 +35,7 @@ namespace DungeonCrawler.Networking
         {
             Action,
             DeltaState,
-            NewPlayer,
-            StateRequest
+            NewPlayer
         }
         NetClient client;
 
@@ -129,7 +128,6 @@ namespace DungeonCrawler.Networking
                                     player.Init();
                                     ((InGameState)Game.states[Game.currentState]).playerId = senderId;
                                     connected = true;
-                                    SendMessage(((InGameState)Game.states[Game.currentState]).playerId, MessageType.StateRequest, new byte[0], NetDeliveryMethod.ReliableOrdered);
                                     break;
 
                             case MessageType.DeltaState:
@@ -234,10 +232,6 @@ namespace DungeonCrawler.Networking
                         break;
                 }
                 client.Recycle(msg);
-            }
-            if (connected)
-            {
-                SendMessage(((InGameState)Game.states[Game.currentState]).playerId, MessageType.StateRequest, new byte[0], NetDeliveryMethod.Unreliable);
             }
         }
 

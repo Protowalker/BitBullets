@@ -106,8 +106,6 @@ namespace DungeonCrawler.Networking
                                         RealTimeActions.Add(action);
                                     }
                                     break;
-                                case MessageType.StateRequest:
-                                    break;
                                 default:
                                     Console.WriteLine("Unhandled Data Message Type: " + type);
                                     break;
