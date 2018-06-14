@@ -18,6 +18,8 @@ namespace DungeonCrawler.Entities
 
         internal int age = 0;
 
+        public override float health { get => 100; set => health = 100; }
+
         Vector2f velocity;
 
         public override int Id { get => id; set => id = value; }

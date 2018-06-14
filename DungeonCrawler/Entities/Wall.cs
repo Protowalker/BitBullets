@@ -13,6 +13,8 @@ namespace DungeonCrawler
 {
     class Wall : Entity
     {
+        public override float health { get => 100; set => health = 100; }
+
         public Wall(RectangleShape rect)
         {
             moveSpeed = 0;

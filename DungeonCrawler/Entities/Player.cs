@@ -15,7 +15,7 @@ namespace DungeonCrawler
     {
         public Character currentCharacter;
 
-        public float health;
+        public override float health { get; set; }
 
         public override int Id { get => id; set => id = value; }
         public override int ParentId { get => parentId; set => parentId = value; }
@@ -33,6 +33,10 @@ namespace DungeonCrawler
 
             //rect.Origin = rect.Size / 2;
             type = EntityType.Player;
+            if(Game.currentState == State.StateType.ServerState)
+            {
+                DieEvent += new DieHandler(OnDeath);
+            }
         }
 
         public override void Init()
@@ -59,10 +63,13 @@ namespace DungeonCrawler
 
         public override void Update(float deltaTime)
         {
+            base.Update(deltaTime);
+
             NetGameState netState = Game.states[Game.currentState].netState;
             moveDelta *= deltaTime;
             //Deal with movement.
             HandleCollision();
+
         }
 
         public Actions.Action OnPrimaryFire()
@@ -78,6 +85,13 @@ namespace DungeonCrawler
         public void TakeDamage(float damageTaken)
         {
             health -= damageTaken;
+            Console.WriteLine("Current health is " + health);
+        }
+
+        public void OnDeath(Entity ent)
+        {
+            health = currentCharacter.MaxHealth;
+            rect.Position = new Vector2f(0,0);
         }
 
         public override NetEntity ToNetEntity()

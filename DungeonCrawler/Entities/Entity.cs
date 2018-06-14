@@ -31,6 +31,8 @@ namespace DungeonCrawler
         public abstract int Id { get; set; }
         public abstract int ParentId { get; set; }
         public abstract float moveSpeed { get; set; }
+
+        public abstract float health { get; set; }
         
         internal Vector2f moveDelta = new Vector2f();
 
@@ -39,7 +41,7 @@ namespace DungeonCrawler
         public Vector2f direction = new Vector2f();
 
         public delegate void MoveHandler(int id, Vector2f delta);
-        public delegate void DieHandler(Entity ent, int timeOfDeath);
+        public delegate void DieHandler(Entity ent);
         public event MoveHandler MoveEvent = delegate { };
         public event DieHandler DieEvent = delegate { };
 
@@ -59,7 +61,13 @@ namespace DungeonCrawler
         }
 
         public abstract void Init();
-        public abstract void Update(float deltaTime);
+        public virtual void Update(float deltaTime)
+        {
+            if (health <= 0)
+            {
+                DieEvent(this);
+            }
+        }
 
         //Called on Entity death
         public abstract void Destroy();
