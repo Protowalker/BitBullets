@@ -11,6 +11,21 @@
     <TargetFrameworkVersion>v4.6.1</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
     <AutoGenerateBindingRedirects>true</AutoGenerateBindingRedirects>
+    <PublishUrl>publish\</PublishUrl>
+    <Install>true</Install>
+    <InstallFrom>Disk</InstallFrom>
+    <UpdateEnabled>false</UpdateEnabled>
+    <UpdateMode>Foreground</UpdateMode>
+    <UpdateInterval>7</UpdateInterval>
+    <UpdateIntervalUnits>Days</UpdateIntervalUnits>
+    <UpdatePeriodically>false</UpdatePeriodically>
+    <UpdateRequired>false</UpdateRequired>
+    <MapFileExtensions>true</MapFileExtensions>
+    <ApplicationRevision>0</ApplicationRevision>
+    <ApplicationVersion>1.0.0.%2a</ApplicationVersion>
+    <IsWebBootstrapper>false</IsWebBootstrapper>
+    <UseApplicationTrust>false</UseApplicationTrust>
+    <BootstrapperEnabled>true</BootstrapperEnabled>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
     <PlatformTarget>AnyCPU</PlatformTarget>
@@ -42,7 +57,7 @@
     <Prefer32Bit>true</Prefer32Bit>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Release|x64'">
-    <OutputPath>bin\x64\Release\</OutputPath>
+    <OutputPath>.\</OutputPath>
     <DefineConstants>TRACE</DefineConstants>
     <Optimize>true</Optimize>
     <DebugType>pdbonly</DebugType>
@@ -51,32 +66,51 @@
     <CodeAnalysisRuleSet>MinimumRecommendedRules.ruleset</CodeAnalysisRuleSet>
     <Prefer32Bit>true</Prefer32Bit>
   </PropertyGroup>
+  <PropertyGroup>
+    <StartupObject>
+    </StartupObject>
+  </PropertyGroup>
   <ItemGroup>
     <None Include="App.config" />
     <None Include="Assets\TestMap1.tmx">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
+    <None Include="packages.config" />
   </ItemGroup>
   <ItemGroup>
-    <Reference Include="Lidgren.Network, Version=3.6.0.1625, Culture=neutral, processorArchitecture=MSIL">
+    <Reference Include="Lidgren.Network, Version=2012.1.7.0, Culture=neutral, processorArchitecture=MSIL">
       <SpecificVersion>False</SpecificVersion>
-      <HintPath>..\..\..\..\..\Downloads\lidgren-network-gen3-master\Lidgren.Network\bin\Debug\Lidgren.Network.dll</HintPath>
+      <HintPath>..\..\..\..\Downloads\lidgren-network-gen3-master\lidgren-network-gen3-master\Lidgren.Network\bin\Debug\Lidgren.Network.dll</HintPath>
     </Reference>
-    <Reference Include="sfmlnet-audio-2">
-      <HintPath>..\..\..\..\SFML.Net-2.2-64-bit\SFML.Net-2.2\lib\sfmlnet-audio-2.dll</HintPath>
+    <Reference Include="MessagePack, Version=1.7.3.4, Culture=neutral, PublicKeyToken=b4a0369545f0a1be, processorArchitecture=MSIL">
+      <HintPath>..\packages\MessagePack.1.7.3.4\lib\net45\MessagePack.dll</HintPath>
     </Reference>
-    <Reference Include="sfmlnet-graphics-2">
-      <HintPath>..\..\..\..\SFML.Net-2.2-64-bit\SFML.Net-2.2\lib\sfmlnet-graphics-2.dll</HintPath>
+    <Reference Include="sfmlnet-audio-2, Version=2.2.0.0, Culture=neutral, processorArchitecture=AMD64">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>Refs\sfmlnet-audio-2.dll</HintPath>
     </Reference>
-    <Reference Include="sfmlnet-system-2">
-      <HintPath>..\..\..\..\SFML.Net-2.2-64-bit\SFML.Net-2.2\lib\sfmlnet-system-2.dll</HintPath>
+    <Reference Include="sfmlnet-graphics-2, Version=2.2.0.0, Culture=neutral, processorArchitecture=AMD64">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>Refs\sfmlnet-graphics-2.dll</HintPath>
     </Reference>
-    <Reference Include="sfmlnet-window-2">
-      <HintPath>..\..\..\..\SFML.Net-2.2-64-bit\SFML.Net-2.2\lib\sfmlnet-window-2.dll</HintPath>
+    <Reference Include="sfmlnet-system-2, Version=2.2.0.0, Culture=neutral, processorArchitecture=AMD64">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>Refs\sfmlnet-system-2.dll</HintPath>
+    </Reference>
+    <Reference Include="sfmlnet-window-2, Version=2.2.0.0, Culture=neutral, processorArchitecture=AMD64">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>Refs\sfmlnet-window-2.dll</HintPath>
+    </Reference>
+    <Reference Include="System" />
+    <Reference Include="System.Threading.Tasks.Extensions, Version=4.1.0.0, Culture=neutral, PublicKeyToken=cc7b13ffcd2ddd51, processorArchitecture=MSIL">
+      <HintPath>..\packages\System.Threading.Tasks.Extensions.4.3.0\lib\portable-net45+win8+wp8+wpa81\System.Threading.Tasks.Extensions.dll</HintPath>
+    </Reference>
+    <Reference Include="System.ValueTuple, Version=4.0.1.0, Culture=neutral, PublicKeyToken=cc7b13ffcd2ddd51, processorArchitecture=MSIL">
+      <HintPath>..\packages\System.ValueTuple.4.3.0\lib\netstandard1.0\System.ValueTuple.dll</HintPath>
     </Reference>
     <Reference Include="System.Xml.Linq" />
     <Reference Include="TiledSharp">
-      <HintPath>..\..\SFMLRPG\SFMLRPG\bin\x64\Debug\TiledSharp.dll</HintPath>
+      <HintPath>Refs\TiledSharp.dll</HintPath>
     </Reference>
   </ItemGroup>
   <ItemGroup>
@@ -107,14 +141,21 @@
     <Content Include="OpenTK.dll">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
+    <Content Include="Refs\Lidgren.Network.dll" />
+    <Content Include="Refs\sfmlnet-audio-2.dll" />
+    <Content Include="Refs\sfmlnet-graphics-2.dll" />
+    <Content Include="Refs\sfmlnet-system-2.dll" />
+    <Content Include="Refs\sfmlnet-window-2.dll" />
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Actions\Action.cs" />
+    <Compile Include="Actions\ChangeDirectionAction.cs" />
     <Compile Include="Actions\CompositeAction.cs" />
-    <Compile Include="Actions\Parallel.cs" />
+    <Compile Include="Actions\MoveAction.cs" />
+    <Compile Include="Actions\ParallelAction.cs" />
     <Compile Include="Actions\ScoutShotgunAction.cs" />
     <Compile Include="Actions\ScoutViewfinderAction.cs" />
-    <Compile Include="Actions\Sequence.cs" />
+    <Compile Include="Actions\SequenceAction.cs" />
     <Compile Include="Actions\Weapon.cs" />
     <Compile Include="Characters\Character.cs" />
     <Compile Include="Characters\Scout.cs" />
@@ -124,19 +165,40 @@
     <Compile Include="Entities\Entity.cs" />
     <Compile Include="Game.cs" />
     <Compile Include="Handlers\InputHandler.cs" />
+    <Compile Include="Networking\NetEntities\NetEntity.cs" />
+    <Compile Include="Networking\NetEntities\NetShotgunPellet.cs" />
+    <Compile Include="Networking\NetEntities\NetWall.cs" />
+    <Compile Include="Networking\NetGameState.cs" />
+    <Compile Include="Networking\NetEntities\NetPlayer.cs" />
+    <Compile Include="Networking\NetQuadTree.cs" />
+    <Compile Include="Networking\NetQuadTreeNode.cs" />
+    <Compile Include="Networking\NetServerGameState.cs" />
     <Compile Include="States\InGameState.cs" />
+    <Compile Include="States\ServerState.cs" />
     <Compile Include="States\State.cs" />
     <Compile Include="Entities\Wall.cs" />
     <Compile Include="Entities\Player.cs" />
-    <Compile Include="World.cs" />
-  </ItemGroup>
-  <ItemGroup>
-    <Folder Include="Networking\" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Assets\Dungeon.tsx">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
   </ItemGroup>
+  <ItemGroup>
+    <BootstrapperPackage Include=".NETFramework,Version=v4.6.1">
+      <Visible>False</Visible>
+      <ProductName>Microsoft .NET Framework 4.6.1 %28x86 and x64%29</ProductName>
+      <Install>true</Install>
+    </BootstrapperPackage>
+    <BootstrapperPackage Include="Microsoft.Net.Framework.3.5.SP1">
+      <Visible>False</Visible>
+      <ProductName>.NET Framework 3.5 SP1</ProductName>
+      <Install>false</Install>
+    </BootstrapperPackage>
+  </ItemGroup>
+  <ItemGroup>
+    <Analyzer Include="..\packages\MessagePackAnalyzer.1.6.0\analyzers\dotnet\cs\MessagePackAnalyzer.dll" />
+  </ItemGroup>
+  <ItemGroup />
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
 </Project>

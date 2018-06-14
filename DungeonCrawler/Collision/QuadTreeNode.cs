@@ -1,4 +1,5 @@
 ﻿using DungeonCrawler.Actions;
+using DungeonCrawler.Networking;
 using DungeonCrawler.States;
 using SFML.Graphics;
 using SFML.System;
@@ -16,17 +17,18 @@ namespace DungeonCrawler.Collision
         QuadTreeNode parent;
         internal List<int> items = new List<int>();
 
+        
         internal FloatRect rect;
         int maxItems;
 
-        QuadTreeNode topLeftNode;
-        QuadTreeNode topRightNode;
-        QuadTreeNode bottomLeftNode;
-        QuadTreeNode bottomRightNode;
+       internal QuadTreeNode topLeftNode;
+       internal QuadTreeNode topRightNode;
+       internal QuadTreeNode bottomLeftNode;
+       internal QuadTreeNode bottomRightNode;
 
 
 
-        bool isPartitioned;
+        internal bool isPartitioned;
 
         public QuadTreeNode(QuadTreeNode parent, FloatRect rect, int maxItems)
         {
@@ -46,7 +48,7 @@ namespace DungeonCrawler.Collision
         {
             if (!InsertInChild(item))
             {
-                World.Entities[item].MoveEvent += new Entity.MoveHandler(ItemMove);
+                Game.states[Game.currentState].netState.Entities[item].MoveEvent += new Entity.MoveHandler(ItemMove);
                 items.Add(item);
             }
 
@@ -72,9 +74,14 @@ namespace DungeonCrawler.Collision
 
             isPartitioned = true;
 
-            foreach (int item in items)
+            for(int i = 0; i < items.Count; i++)
             {
-                if (InsertInChild(item)) removalList.Add(item);
+                if (!Game.states[Game.currentState].netState.Entities.ContainsKey(items[i]))
+                {
+                    RemoveItem(i);
+                    continue;
+                }
+                if (InsertInChild(items[i])) removalList.Add(items[i]);
             }
 
             foreach (int item in removalList)
@@ -102,9 +109,14 @@ namespace DungeonCrawler.Collision
             if (rect.Intersects(colRect))
             {
                 // test the point in each item
-                foreach (int item in items)
+                for(int i = 0; i < items.Count; i++)
                 {
-                    if (World.Entities[item].rect.GetGlobalBounds().Intersects(colRect)) itemsFound.Add(item);
+                    if (!Game.states[Game.currentState].netState.Entities.ContainsKey(items[i]))
+                    {
+                        RemoveItem(i);
+                        continue;
+                    }
+                    if (Game.states[Game.currentState].netState.Entities[items[i]].rect.GetGlobalBounds().Intersects(colRect)) itemsFound.Add(items[i]);
                 }
 
                 // query all subtrees
@@ -145,7 +157,7 @@ namespace DungeonCrawler.Collision
             {
                 QuadTreeNode n = null;
 
-                FloatRect rect = World.Entities[item].rect.GetGlobalBounds();
+                FloatRect rect = Game.states[Game.currentState].netState.Entities[item].rect.GetGlobalBounds();
 
                 // Check the nodes that could contain the item
                 if (topLeftNode.ContainsRect(rect))
@@ -174,6 +186,12 @@ namespace DungeonCrawler.Collision
         {
             int id = items[i];
 
+            if (!Game.states[Game.currentState].netState.Entities.ContainsKey(id))
+            {
+                items.RemoveAt(i);
+                return;
+            }
+
             RemoveItem(i);
             parent.Insert(id);
 
@@ -185,12 +203,21 @@ namespace DungeonCrawler.Collision
 
         internal void RemoveItem(int i)
         {
-            World.Entities[items[i]].MoveEvent -= new Entity.MoveHandler(ItemMove);
+            if (Game.states[Game.currentState].netState.Entities.ContainsKey(items[i]))
+            {
+                Game.states[Game.currentState].netState.Entities[items[i]].MoveEvent -= new Entity.MoveHandler(ItemMove);
+            }
             items.RemoveAt(i);
         }
 
         private bool PushItemDown(int i)
         {
+            if (!Game.states[Game.currentState].netState.Entities.ContainsKey(items[i]))
+            {
+                items.RemoveAt(i);
+                return false;
+            }
+
             if (InsertInChild(items[i]))
             {
                 RemoveItem(i);
@@ -207,8 +234,7 @@ namespace DungeonCrawler.Collision
             {
                 return false;
             }
-
-            FloatRect rect = World.Entities[item].rect.GetGlobalBounds();
+            FloatRect rect = Game.states[Game.currentState].netState.Entities[item].rect.GetGlobalBounds();
 
             if (topLeftNode.ContainsRect(rect))
             {
@@ -272,7 +298,7 @@ namespace DungeonCrawler.Collision
 
         private void ItemMove(int id, Vector2f delta)
         {
-            Entity item = World.Entities[id];
+            Entity item = Game.states[Game.currentState].netState.Entities[id];
             if (items.Contains(id))
             {
                 int i = items.IndexOf(id);
@@ -292,6 +318,34 @@ namespace DungeonCrawler.Collision
                 // this node doesn't contain that item, stop notifying it about it
                 item.MoveEvent -= new Entity.MoveHandler(ItemMove);
             }
+        }
+
+        public NetQuadTreeNode ToNetQuadTreeNode()
+        {
+            NetQuadTreeNode node = new NetQuadTreeNode();
+            if(parent != null) {
+                node.parent = parent.ToNetQuadTreeNode();
+            }
+            else
+            {
+                node.parent = null;
+            }
+
+            node.items = items;
+
+            node.rectX = rect.Left;
+            node.rectY = rect.Top;
+            node.rectWidth = rect.Width;
+            node.rectHeight = rect.Height;
+
+            node.maxItems = maxItems;
+
+            if (topLeftNode != null) node.topLeftNode = topLeftNode.ToNetQuadTreeNode();
+            if (topRightNode != null) node.topRightNode = topRightNode.ToNetQuadTreeNode();
+            if (bottomLeftNode != null) node.bottomLeftNode = bottomLeftNode.ToNetQuadTreeNode();
+            if (bottomRightNode != null) node.bottomRightNode = bottomRightNode.ToNetQuadTreeNode();
+
+            return node;
         }
     }
 }

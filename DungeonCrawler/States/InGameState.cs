@@ -1,96 +1,127 @@
 ﻿using DungeonCrawler.Actions;
-using DungeonCrawler.Collision;
 using DungeonCrawler.Handlers;
+using DungeonCrawler.Networking;
 using SFML.Graphics;
 using SFML.System;
 using SFML.Window;
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using TiledSharp;
 
 namespace DungeonCrawler.States
 {
     class InGameState : State
     {
+
         public TmxMap map;
         public Texture tileset;
 
-        public QuadTree quadTree;
+        public override float TickRate => 1000 / 20;
 
-        public List<RectangleShape> renderQueue = new List<RectangleShape>();
+        public int playerId;
 
-        public InGameState(TmxMap map, Texture tileset)
+        public InGameState(TmxMap map, Texture tileset, string host, int port)
         {
             this.map = map;
             this.tileset = tileset;
-            quadTree = new QuadTree(new FloatRect(-10000000, -100000000, 1000000000, 1000000000), 2);
+            netState = new NetGameState(host, port);
+            
         }
 
         public override void Init()
         {
-            //t
-            GenerateCollisionMap();
+            Game.app.MouseMoved += new EventHandler<MouseMoveEventArgs>(OnMouseMove);
+            Game.app.MouseButtonPressed += new EventHandler<MouseButtonEventArgs>(Handlers.InputHandler.OnMouseButtonPressed);
+            Game.app.MouseButtonReleased += new EventHandler<MouseButtonEventArgs>(Handlers.InputHandler.OnMouseButtonReleased);
+            //GenerateCollisionMap();
         }
 
         public override void Render()
         {
-            Game.view.Center = Game.player.rect.Position;
-            Game.app.SetView(Game.view);
-
-            DrawMap(map, tileset);
-
-            foreach (Entity ent in World.Entities.Values)
+            if (netState.ready)
             {
-                if ((ent.flags & Entity.Flags.RENDER) == Entity.Flags.RENDER)
-                    Game.app.Draw(ent.rect);
+                Player player = (Player)netState.Entities[playerId];
+
+                Game.view.Center = player.rect.Position;
+                Game.view.Size = (Vector2f)Game.app.Size * player.FOV;
+                Game.app.SetView(Game.view);
+
+                DrawMap(map, tileset);
+
+                List<Entity> renderQueue = netState.Entities.Values.ToList();
+
+                foreach (Entity ent in renderQueue)
+                {
+                    if(ent.Id == playerId)
+                    {
+                        Game.app.Draw(netState.Entities[playerId].rect);
+                    }
+                    else
+                    {
+                        if ((ent.flags & Entity.Flags.RENDER) == Entity.Flags.RENDER)
+                            Game.app.Draw(ent.rect);
+                    }
+                  
+                }
             }
 
         }
 
-        public override void Update()
+
+        public override void Update(float deltaTime)
         {
-            ControlPlayer(Game.player.currentCharacter.MovementSpeed);
-            World.Update();
+            netState.Update(deltaTime);
+            if (netState.ready)
+            {
+                if (Game.app.HasFocus())
+                {
+                    Input();
+                }
+            }
+        }
+
+        private void Input()
+        {
+            ControlPlayer();
             if (InputHandler.MouseButtonPressed(Mouse.Button.Left))
             {
-                Game.player.OnPrimaryFire();
+                netState.RealTimeActions.Add(((Player)netState.Entities[playerId]).OnPrimaryFire());
             }
-            if (InputHandler.MouseButtonDown(Mouse.Button.Right))
+            if (InputHandler.MouseButtonPressed(Mouse.Button.Right)) 
             {
-                Game.player.OnSecondaryFire();
+                netState.RealTimeActions.Add(((Player)netState.Entities[playerId]).OnSecondaryFire());
             }
         }
 
-        private void ControlPlayer(float playerSpeed)
+        private void ControlPlayer()
         {
             
 
             //Check left and right. Seperated so that collision is not checked while inside a box because of the other direction.
             if (Keyboard.IsKeyPressed(Keyboard.Key.A))
             {
-                Game.player.Move(new Vector2f(-playerSpeed, 0));
+                netState.RealTimeActions.Add(new MoveAction(playerId, -1, 0));
             }
 
-            if (Keyboard.IsKeyPressed(Keyboard.Key.D))
+            else if (Keyboard.IsKeyPressed(Keyboard.Key.D))
             {
-                Game.player.Move(new Vector2f(playerSpeed, 0));
+                netState.RealTimeActions.Add(new MoveAction(playerId, 1, 0));
             }
 
             //check up and down.
             if (Keyboard.IsKeyPressed(Keyboard.Key.W))
             {
-                Game.player.Move(new Vector2f(0, -playerSpeed));
+                netState.RealTimeActions.Add(new MoveAction(playerId, 0, -1));
             }
 
-            if (Keyboard.IsKeyPressed(Keyboard.Key.S))
+            else if (Keyboard.IsKeyPressed(Keyboard.Key.S))
             {
-                Game.player.Move(new Vector2f(0, playerSpeed));
+                netState.RealTimeActions.Add(new MoveAction(playerId, 0, 1));
             }
 
         }
+
 
         private void DrawMap(TmxMap map, Texture tileset)
         {
@@ -158,13 +189,22 @@ namespace DungeonCrawler.States
                             RectangleShape rect = new RectangleShape(new Vector2f((float)obj.Width, (float)obj.Height));
                             rect.Position = new Vector2f(x, y) + new Vector2f((float)obj.X, (float)obj.Y);
                             Wall wall = new Wall(rect);
-                            World.Entities[wall.Id].flags = Entity.Flags.WALL;
+                            Game.states[Game.currentState].netState.Entities[wall.Id].flags = Entity.Flags.WALL;
 
                         }
                     }
 
                 }
             }
+        }
+
+        public void OnMouseMove(object sender, MouseMoveEventArgs e)
+        {
+            Vector2f mousePos = Game.app.MapPixelToCoords(new Vector2i(e.X, e.Y));
+            Vector2f relPos = mousePos - netState.Entities[playerId].rect.Position;
+            float angle = (float)Math.Atan2(relPos.Y, relPos.X);
+            netState.RealTimeActions.Add(new ChangeDirectionAction(playerId, angle));
+
         }
     }
 }

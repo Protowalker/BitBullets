@@ -1,4 +1,5 @@
 ﻿using DungeonCrawler.Actions;
+using DungeonCrawler.States;
 using SFML.System;
 using SFML.Window;
 using System;
@@ -13,15 +14,6 @@ namespace DungeonCrawler.Handlers
     {
         static Dictionary<Mouse.Button, bool> buttonPressed = new Dictionary<Mouse.Button, bool>();
         static Dictionary<Mouse.Button, bool> buttonDown = new Dictionary<Mouse.Button, bool>();
-
-        public static void OnMouseMove(object sender, MouseMoveEventArgs e)
-        {
-            Vector2f mousePos = Game.app.MapPixelToCoords(new Vector2i(e.X,e.Y));
-            Vector2f relPos = mousePos - Game.player.rect.Position;
-            float angle = (float)Math.Atan2(relPos.Y, relPos.X);
-            Game.player.direction = new Vector2f((float)Math.Cos(angle), (float)Math.Sin(angle));
-            //Game.player.direction = relPos;
-        }
 
         public static void OnMouseButtonPressed(object sender, MouseButtonEventArgs e)
         {
@@ -39,8 +31,8 @@ namespace DungeonCrawler.Handlers
 
         public static bool MouseButtonPressed(Mouse.Button button)
         {
-            if (!buttonDown.ContainsKey(button)) buttonDown.Add(button, true);
-            if (!buttonPressed.ContainsKey(button)) buttonPressed.Add(button, true);
+            if (!buttonDown.ContainsKey(button)) buttonDown.Add(button, Mouse.IsButtonPressed(button));
+            if (!buttonPressed.ContainsKey(button)) buttonPressed.Add(button, Mouse.IsButtonPressed(button));
             bool pressed = buttonPressed[button];
             if (pressed) buttonPressed[button] = false;
             return pressed;
@@ -48,8 +40,8 @@ namespace DungeonCrawler.Handlers
 
         public static bool MouseButtonDown(Mouse.Button button)
         {
-            if (!buttonDown.ContainsKey(button)) buttonDown.Add(button, true);
-            if (!buttonPressed.ContainsKey(button)) buttonPressed.Add(button, true);
+            if (!buttonDown.ContainsKey(button)) buttonDown.Add(button, Mouse.IsButtonPressed(button));
+            if (!buttonPressed.ContainsKey(button)) buttonPressed.Add(button, Mouse.IsButtonPressed(button));
             return buttonDown[button];
         }
     }

@@ -1,4 +1,6 @@
 ﻿using DungeonCrawler.Actions;
+using DungeonCrawler.Networking;
+using DungeonCrawler.States;
 using SFML.Graphics;
 using SFML.System;
 using System;
@@ -11,9 +13,19 @@ namespace DungeonCrawler.Collision
 {
     class QuadTree
     {
+
         protected QuadTreeNode headNode;
 
         protected int maxItems;
+
+        public List<int> allItems = new List<int>();
+
+
+        public QuadTree(QuadTreeNode headNode, int maxItems)
+        {
+            this.headNode = headNode;
+            this.maxItems = maxItems;
+        }
 
         public QuadTree(FloatRect worldRect, int maxItems)
         {
@@ -23,7 +35,7 @@ namespace DungeonCrawler.Collision
 
         public void Insert(int item)
         {
-            FloatRect rect = World.Entities[item].rect.GetGlobalBounds();
+            FloatRect rect = Game.states[Game.currentState].netState.Entities[item].rect.GetGlobalBounds();
             // check if the world needs resizing
             if (!headNode.rect.Intersects(rect))
             {
@@ -36,6 +48,7 @@ namespace DungeonCrawler.Collision
                      new Vector2f(Math.Max(bottomRight.X, itemBottomRight.X), Math.Max(bottomRight.Y, itemBottomRight.Y)) * 2));
             }
 
+            allItems.Add(item);
             headNode.Insert(item);
         }
 
@@ -71,7 +84,11 @@ namespace DungeonCrawler.Collision
 
         public QuadTreeNode FindItemNode(int itemId)
         {
-            return headNode.FindItemNode(itemId);
+            if (!Game.states[Game.currentState].netState.Entities.ContainsKey(itemId)) return null;
+            if (allItems.Contains(itemId))
+            {
+                return headNode.FindItemNode(itemId);
+            } else return null;
         }
 
         public bool RemoveItem(int itemId)
@@ -81,9 +98,26 @@ namespace DungeonCrawler.Collision
             {
                 node.RemoveItem(node.items.IndexOf(itemId));
                 node = FindItemNode(itemId);
+                allItems.Remove(itemId);
                 return true;
             }
-            else return false;
+            else
+            {
+                if (allItems.Contains(itemId))
+                {
+                    allItems.Remove(itemId);
+                }
+                return false;
+            }
+        }
+
+        public NetQuadTree ToNetQuadTree()
+        {
+            NetQuadTree tree = new NetQuadTree();
+            tree.headNode = headNode.ToNetQuadTreeNode();
+            tree.maxItems = maxItems;
+
+            return tree;
         }
     }
 }
