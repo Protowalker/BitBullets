@@ -17,7 +17,7 @@ namespace DungeonCrawler.Actions
         [SerializationConstructor]
         public ScoutShotgunAction()
         {
-
+            this.finished = true;
         }
         public ScoutShotgunAction(int id) : base(id)
         {

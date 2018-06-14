@@ -15,13 +15,14 @@ namespace DungeonCrawler.States
     {
         TmxMap map;
 
+        public override float TickRate => 1000 / 15;
+
         
         public ServerState(TmxMap map, int port)
         {
             this.map = map;
 
             netState = new NetServerGameState(port);
-            TickRate = 1000 / 20;
         }
 
         public override void Init()
@@ -34,9 +35,9 @@ namespace DungeonCrawler.States
         {
         }
 
-        public override void Update()
+        public override void Update(float deltaTime)
         {
-            netState.Update();
+            netState.Update(deltaTime);
         }
 
 

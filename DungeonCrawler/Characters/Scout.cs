@@ -20,7 +20,7 @@ namespace DungeonCrawler.Characters
         [Key(10)]
         public override float MovementSpeed => .1f;
         [Key(11)]
-        public override float FOV => 100;
+        public override float FOV => .3f;
 
         [Key(12)]
         public override int CurrentWeapon { get => currentWeapon; set => currentWeapon = value; }
@@ -34,14 +34,14 @@ namespace DungeonCrawler.Characters
             weapons[0] = new Weapon();
         }
 
-        public override void OnPrimaryFire()
+        public override Actions.Action OnPrimaryFire()
         {
-            Game.states[Game.currentState].netState.RealTimeActions.Add(weapons[0].primaryFire);
+            return new ScoutShotgunAction(parentId);
         }
 
-        public override void OnSecondaryFire()
+        public override Actions.Action OnSecondaryFire()
         {
-            Game.states[Game.currentState].netState.RealTimeActions.Add(weapons[0].secondaryFire);
+            return new ScoutViewfinderAction(parentId, false);
         }
 
         public override void OnDeath()

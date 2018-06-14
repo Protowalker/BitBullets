@@ -34,8 +34,6 @@ namespace DungeonCrawler.Actions
 
         static bool isServer;
 
-        static readonly float updateRate = (1000/60);
-
         public static void Init()
         {
             Console.WriteLine("Do you want to run server? y/n");
@@ -81,7 +79,7 @@ namespace DungeonCrawler.Actions
                 states[currentState].Render();
                 if (deltaClock.ElapsedTime.AsMilliseconds() >= states[currentState].TickRate)
                 {
-                    states[currentState].Update();
+                    states[currentState].Update(deltaClock.ElapsedTime.AsMilliseconds()/10);
                     deltaClock.Restart();
                 }
 

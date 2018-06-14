@@ -66,9 +66,44 @@ namespace DungeonCrawler
 
         public abstract NetEntity ToNetEntity();
 
+        public override bool Equals(object obj)
+        {
+            if (obj.GetType() != GetType())
+            {
+                return false;
+            }
+            else
+            {
+                Entity ent = (Entity)obj;
+                if (type == ent.type &&
+                   id == ent.id &&
+                   parentId == ent.parentId &&
+                   moveSpeed == ent.moveSpeed &&
+                   moveDelta.X == ent.moveDelta.X &&
+                   moveDelta.Y == ent.moveDelta.Y &&
+                   rect.Position.X == ent.rect.Position.X &&
+                   rect.Position.Y == ent.rect.Position.Y &&
+                   direction.X == ent.direction.X &&
+                   direction.Y == ent.direction.Y &&
+                   flags == ent.flags) return true;
+                else return false;
+            }
+
+        }
+
+        public abstract void HandleCollision();
+
+        public override int GetHashCode()
+        {
+            return id.GetHashCode() + (id * rect.GetHashCode()) * moveDelta.GetHashCode();
+        }
+
         public Entity Clone()
         {
-            return (Entity)MemberwiseClone();
+            Entity ent = (Entity)MemberwiseClone();
+            ent.rect = new RectangleShape(rect);
+
+            return ent;
         }
     }
 }

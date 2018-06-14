@@ -16,8 +16,7 @@ namespace DungeonCrawler
         public Wall(RectangleShape rect)
         {
             moveSpeed = 0;
-            id = highestId + 1;
-            highestId = id;
+           
 
             this.rect = rect;
             type = EntityType.Wall;
@@ -25,6 +24,8 @@ namespace DungeonCrawler
 
         public override void Init()
         {
+            id = highestId + 1;
+            highestId = id;
             Game.states[Game.currentState].netState.Entities.Add(id, this);
             Game.states[Game.currentState].netState.quadTree.Insert(id);
         }
@@ -58,6 +59,10 @@ namespace DungeonCrawler
             netWall.Type = type;
 
             return netWall;
+        }
+
+        public override void HandleCollision()
+        {
         }
     }
 }

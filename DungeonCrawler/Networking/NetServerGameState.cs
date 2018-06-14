@@ -30,6 +30,11 @@ namespace DungeonCrawler.Networking
             config.EnableMessageType(NetIncomingMessageType.ConnectionLatencyUpdated);
 
             server = new NetServer(config);
+
+            for(int i = 0; i < snapshots.Length; i++)
+            {
+                snapshots[i] = new List<Entity>();
+            }
         }
 
         public void Init()
@@ -138,7 +143,11 @@ namespace DungeonCrawler.Networking
             {
                 SendDeltaState(clientID, clientIDs[clientID].lastAckSequence, clientIDs[clientID].connection);
             }
-            snapshots[sequence % 32] = Entities.Values.ToList();
+            snapshots[sequence % 32].Clear();
+            foreach(Entity ent in Entities.Values)
+            {
+                snapshots[sequence % 32].Add(ent.Clone());
+            }
             sequence += 1;
         }
 
@@ -157,53 +166,81 @@ namespace DungeonCrawler.Networking
         public void SendDeltaState(int senderId, int lastAckSequence, NetConnection client)
         {
             List<byte> deltaStateMsg = new List<byte>();
-            List<Entity> lastAckState;
+            Dictionary<int, Entity> lastAckState = new Dictionary<int, Entity>();
+
+            lastAckState = snapshots[lastAckSequence % 32].ToDictionary(k => k.Id);
 
             bool hasReset;
-            //if the client has not acknowledged at least one of the previous two delta states, empty it
-            if (lastAckSequence < sequence - 1)
-            {
-                lastAckState = new List<Entity>();
-                hasReset = true;
-            } else //if it has acknowledged a previous one, use that instead.
-            {
-                lastAckState = snapshots[lastAckSequence % 32];
-                hasReset = false;
-            }
+            //if the state has lagged behind by more than 32 updates
+            if (sequence - lastAckSequence > 32) hasReset = true;
+            else hasReset = false;
             //first thing sent is a bool saying whether we have reset the state
             deltaStateMsg.AddRange(BitConverter.GetBytes(hasReset));
+
+            Dictionary<int, NetEntity> netEnts = new Dictionary<int, NetEntity>();
+
+            for (int i = 1; i + lastAckSequence < sequence; i++)
+            {
+                foreach(Entity ent in snapshots[(lastAckSequence + i) % 32])
+                {
+                    if (!lastAckState.ContainsKey(ent.Id))
+                    {
+                        lastAckState.Add(ent.Id, ent.Clone());
+                        netEnts.Add(ent.Id, ent.ToNetEntity());
+                    }
+                    else if(!lastAckState[ent.Id].Equals(ent))
+                    {
+                        lastAckState[ent.Id] = ent.Clone();
+                        if (!netEnts.ContainsKey(ent.Id))
+                        {
+                            netEnts.Add(ent.Id, ent.ToNetEntity());
+                        } else
+                        {
+                            netEnts[ent.Id] = ent.ToNetEntity();
+                        }
+                    }
+                }
+            }
 
             byte[] data;
             byte[] length;
 
-            ////quadtree
-            //NetQuadTree netTree = quadTree.ToNetQuadTree();
-            //data = MessagePackSerializer.Serialize(netTree);
-            //length = BitConverter.GetBytes(data.Length);
-
-            //deltaStateMsg.AddRange(length);
-            //deltaStateMsg.AddRange(data);
-
             //entities
-            Dictionary<int, NetEntity> netEnts = new Dictionary<int, NetEntity>();
             foreach (Entity ent in Entities.Values)
             {
-                if (!lastAckState.Contains(ent))
+                if (!lastAckState.ContainsKey(ent.Id))
                 {
-                    netEnts.Add(ent.Id, ent.ToNetEntity());
+                    if (!netEnts.ContainsKey(ent.Id))
+                    {
+                        netEnts.Add(ent.Id, ent.ToNetEntity());
+                    } else
+                    {
+                        netEnts[ent.Id] = ent.ToNetEntity();
+                    }
+                } else if (!lastAckState.ContainsValue(ent))
+                {
+                    if (!netEnts.ContainsKey(ent.Id))
+                    {
+                        netEnts.Add(ent.Id, ent.ToNetEntity());
+                    }
+                    else
+                    {
+                        netEnts[ent.Id] = ent.ToNetEntity();
+                    }
                 }
             }
-            foreach (Entity ent in lastAckState)
+            foreach (int id in lastAckState.Keys)
             {
-                if (!Entities.ContainsKey(ent.Id))
+                if (!Entities.ContainsKey(id))
                 {
-                    EntitiesForDestruction.Add(ent.Id);
+                    EntitiesForDestruction.Add(id);
                 }
             }
 
             data = LZ4MessagePackSerializer.Serialize(netEnts);
             length = BitConverter.GetBytes(data.Length);
-            
+
+            Console.WriteLine(data.Length);
 
             deltaStateMsg.AddRange(length);
             deltaStateMsg.AddRange(data);

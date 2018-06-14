@@ -33,55 +33,43 @@ namespace DungeonCrawler.Entities
             this.velocity = velocity;
             this.parentId = parentId;
             this.flags = this.flags | Entity.Flags.PROJECTILE | Entity.Flags.RENDER;
-            id = highestId + 1;
-            highestId = id;
+            
             type = EntityType.ShotgunPellet;
         }
 
 
         public override void Init()
         {
+            id = highestId + 1;
+            highestId = id;
             Game.states[Game.currentState].netState.Entities.Add(id, this);
             Game.states[Game.currentState].netState.quadTree.Insert(id);
         }
 
         public override void Destroy()
         {
-            if (Game.states[Game.currentState].netState.quadTree.RemoveItem(id))
+            NetGameState netState = Game.states[Game.currentState].netState;
+
+            if(Game.currentState == State.StateType.ServerState)
             {
-                Game.states[Game.currentState].netState.EntitiesForDestruction.Add(id);
+                if (netState.quadTree.RemoveItem(id) || !netState.quadTree.allItems.Contains(id))
+                {
+                    netState.EntitiesForDestruction.Add(id);
+                }
             }
+           
             //rect.Dispose();
         }
 
         public override void Update(float deltaTime)
         {
-            NetGameState netState = Game.states[Game.currentState].netState;
-
-            List<int> collided = netState.quadTree.GetItems(rect.GetGlobalBounds());
-
             Move(velocity);
+            HandleCollision();
 
-            foreach(int id in collided)
-            {
-                    if ((netState.Entities[id].flags & Entity.Flags.PLAYER) == Entity.Flags.PLAYER  && netState.Entities[id].Id != ParentId)
-                    {
-                        Player player = (Player)netState.Entities[id];
-                        player.TakeDamage(damagePoints);
-                        Destroy();
-                    }
-                    else if ((netState.Entities[id].flags & Entity.Flags.WALL) == Entity.Flags.WALL)
-                    {
-                            Destroy();
-                            break;
-                    }
-            }
-
-            rect.Position += moveDelta;
+            rect.Position += moveDelta * deltaTime;
             moveDelta = new Vector2f();
 
             age += 1;
-
             if (age >= 1000) Destroy();
         }
 
@@ -107,5 +95,27 @@ namespace DungeonCrawler.Entities
             return netShotgunPellet;
         }
 
+        public override void HandleCollision()
+        {
+            NetGameState netState = Game.states[Game.currentState].netState;
+
+            List<int> collided = netState.quadTree.GetItems(rect.GetGlobalBounds());
+
+            foreach (int id in collided)
+            {
+                if ((netState.Entities[id].flags & Entity.Flags.PLAYER) == Entity.Flags.PLAYER && netState.Entities[id].Id != ParentId)
+                {
+                    Player player = (Player)netState.Entities[id];
+                    player.TakeDamage(damagePoints);
+                    Destroy();
+                }
+                else if ((netState.Entities[id].flags & Entity.Flags.WALL) == Entity.Flags.WALL)
+                {
+                    Destroy();
+                    break;
+                }
+            }
+
+        }
     }
 }

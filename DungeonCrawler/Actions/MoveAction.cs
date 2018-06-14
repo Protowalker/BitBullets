@@ -32,7 +32,7 @@ namespace DungeonCrawler.Actions
 
         public override void Update(float elapsed)
         {
-            float moveSpeed = Game.states[Game.currentState].netState.Entities[id].moveSpeed;
+            float moveSpeed = Game.states[Game.currentState].netState.Entities[id].moveSpeed * elapsed;
             Game.states[Game.currentState].netState.Entities[id].Move(new Vector2f(directionX * moveSpeed, directionY * moveSpeed));
             finished = true;
         }

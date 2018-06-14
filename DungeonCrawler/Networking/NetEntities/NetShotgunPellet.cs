@@ -24,6 +24,7 @@ namespace DungeonCrawler.Networking.NetEntities
         public override Entity ToEntity()
         {
             ShotgunPellet pellet = new ShotgunPellet(new SFML.System.Vector2f(RectX, RectY), new SFML.System.Vector2f(velocityX, velocityY), ParentId);
+            pellet.Id = Id;
 
             RectangleShape rect = new RectangleShape();
             rect.Position = new SFML.System.Vector2f(RectX, RectY);

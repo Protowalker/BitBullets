@@ -1,17 +1,12 @@
 ﻿using DungeonCrawler.Actions;
-using DungeonCrawler.Characters;
-using DungeonCrawler.Collision;
 using DungeonCrawler.Handlers;
 using DungeonCrawler.Networking;
-using Lidgren.Network;
 using SFML.Graphics;
 using SFML.System;
 using SFML.Window;
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using TiledSharp;
 
 namespace DungeonCrawler.States
@@ -22,8 +17,7 @@ namespace DungeonCrawler.States
         public TmxMap map;
         public Texture tileset;
 
-
-        public List<RectangleShape> renderQueue = new List<RectangleShape>();
+        public override float TickRate => 1000 / 20;
 
         public int playerId;
 
@@ -32,7 +26,7 @@ namespace DungeonCrawler.States
             this.map = map;
             this.tileset = tileset;
             netState = new NetGameState(host, port);
-            TickRate = 1000 / 100;
+            
         }
 
         public override void Init()
@@ -47,24 +41,37 @@ namespace DungeonCrawler.States
         {
             if (netState.ready)
             {
-                Game.view.Center = netState.Entities[playerId].rect.Position;
+                Player player = (Player)netState.Entities[playerId];
+
+                Game.view.Center = player.rect.Position;
+                Game.view.Size = (Vector2f)Game.app.Size * player.FOV;
                 Game.app.SetView(Game.view);
 
                 DrawMap(map, tileset);
 
-                foreach (Entity ent in Game.states[Game.currentState].netState.Entities.Values)
+                List<Entity> renderQueue = netState.Entities.Values.ToList();
+
+                foreach (Entity ent in renderQueue)
                 {
-                    if ((ent.flags & Entity.Flags.RENDER) == Entity.Flags.RENDER)
-                        Game.app.Draw(ent.rect);
+                    if(ent.Id == playerId)
+                    {
+                        Game.app.Draw(netState.Entities[playerId].rect);
+                    }
+                    else
+                    {
+                        if ((ent.flags & Entity.Flags.RENDER) == Entity.Flags.RENDER)
+                            Game.app.Draw(ent.rect);
+                    }
+                  
                 }
             }
 
         }
 
 
-        public override void Update()
+        public override void Update(float deltaTime)
         {
-            netState.Update();
+            netState.Update(deltaTime);
             if (netState.ready)
             {
                 if (Game.app.HasFocus())
@@ -79,11 +86,11 @@ namespace DungeonCrawler.States
             ControlPlayer();
             if (InputHandler.MouseButtonPressed(Mouse.Button.Left))
             {
-                netState.RealTimeActions.Add(new ScoutShotgunAction(playerId));
+                netState.RealTimeActions.Add(((Player)netState.Entities[playerId]).OnPrimaryFire());
             }
-            if (InputHandler.MouseButtonDown(Mouse.Button.Right)) 
+            if (InputHandler.MouseButtonPressed(Mouse.Button.Right)) 
             {
-                netState.RealTimeActions.Add(new ScoutShotgunAction(playerId));
+                netState.RealTimeActions.Add(((Player)netState.Entities[playerId]).OnSecondaryFire());
             }
         }
 
@@ -114,6 +121,7 @@ namespace DungeonCrawler.States
             }
 
         }
+
 
         private void DrawMap(TmxMap map, Texture tileset)
         {

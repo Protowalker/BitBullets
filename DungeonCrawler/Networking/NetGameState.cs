@@ -73,28 +73,30 @@ namespace DungeonCrawler.Networking
             client.Connect(host, port);
         }
 
-        public void Update()
+        public void Update(float deltaTime)
         {
             ProcessMessages();
 
-            realTimeActions.Update(Game.deltaClock.ElapsedTime.AsMilliseconds());
+            realTimeActions.Update(deltaTime);
             foreach (Entity ent in Entities.Values)
             {
-                ent.Update(Game.deltaClock.ElapsedTime.AsMilliseconds());
+                ent.Update(deltaTime);
             }
 
             foreach (int i in EntitiesForDestruction)
             {
+                //entities[i].rect.Dispose();
                 entities.Remove(i);
             }
             entitiesForDestruction.Clear();
 
-            Game.deltaClock.Restart();
         }
 
 
         protected virtual void ProcessMessages()
         {
+            InGameState currentState = (InGameState)Game.states[Game.currentState];
+
             NetIncomingMessage msg;
             while ((msg = client.ReadMessage()) != null)
             {
@@ -127,24 +129,15 @@ namespace DungeonCrawler.Networking
                                     Console.WriteLine("New player");
                                     Player player = new Player();
                                     player.Init();
-                                    ((InGameState)Game.states[Game.currentState]).playerId = senderId;
+                                    currentState.playerId = senderId;
                                     connected = true;
                                     
                                     break;
 
                             case MessageType.DeltaState:
-                                    ////Quadtree
-                                    //int length = BitConverter.ToInt32(msg.ReadBytes(4), 0);
-                                    //if (length > 0)
-                                    //{
-                                    //    QuadTree newTree = MessagePackSerializer.Deserialize<NetQuadTree>(msg.ReadBytes(length)).ToQuadTree();
-                                    //    this.quadTree = newTree;
-                                    //}
-                                    //entities
-                                    //quadTree = new QuadTree(new FloatRect(-10000000, -100000000, 1000000000, 1000000000), 2);
 
                                     bool hasReset = BitConverter.ToBoolean(msg.ReadBytes(1), 0);
-                                    Console.WriteLine(hasReset);
+                                    //Console.WriteLine(hasReset);
                                     int length = BitConverter.ToInt32(msg.ReadBytes(4), 0);
                                     if (length > 0)
                                     {
@@ -172,6 +165,7 @@ namespace DungeonCrawler.Networking
                                             newEntities.Add(ent.Id, ent);
                                         }
 
+                                        Console.WriteLine(hasReset);
                                         if (hasReset)
                                         {
                                             entities = newEntities;
@@ -192,10 +186,14 @@ namespace DungeonCrawler.Networking
                                         {
                                             if (!quadTree.allItems.Contains(ent.Id))
                                             {
+                                                Console.WriteLine("contains " + ent.Id);
                                                 quadTree.Insert(ent.Id);
                                             }
                                         }
                                     }
+
+
+
                                     //entitiesforDestruction
                                     length = (int)BitConverter.ToInt32(msg.ReadBytes(4), 0);
                                     if (length > 0)
@@ -218,15 +216,14 @@ namespace DungeonCrawler.Networking
                                     data = LZ4MessagePackSerializer.Serialize(actionsForSending);
                                     len = BitConverter.GetBytes(data.Length);
                                     actionsForSending.Clear();
-                                    SendMessage(((InGameState)Game.states[Game.currentState]).playerId, MessageType.Action, len.Concat(data).ToArray(), NetDeliveryMethod.UnreliableSequenced);
+                                    SendMessage(currentState.playerId, MessageType.Action, len.Concat(data).ToArray(), NetDeliveryMethod.UnreliableSequenced);
                                     if (!ready)
                                     {
-                                        Game.states[Game.currentState].Init();
+                                        currentState.Init();
                                         ready = true;
                                     }
                                     lastAckSequence = sequence;
                                     //Tell the server we received the state
-                                    SendMessage(((InGameState)Game.states[Game.currentState]).playerId, MessageType.HeartBeat, new byte[0], NetDeliveryMethod.Unreliable);
                                     break;
                             default:
                                     Console.WriteLine("Unhandled Message Type: " + type);
@@ -237,29 +234,23 @@ namespace DungeonCrawler.Networking
                 }
                 client.Recycle(msg);
             }
+            if (connected)
+            {
+                SendMessage(currentState.playerId, MessageType.HeartBeat, new byte[0], NetDeliveryMethod.Unreliable);
+            }
         }
 
         private void ShiftDeltaState(Dictionary<int, Entity> newEntities)
         {
             foreach (int entId in newEntities.Keys)
-            {
-                if (newEntities[entId] == null)
+            {   
+                if (entities.ContainsKey(entId))
                 {
-                    if (entities.ContainsKey(entId))
-                    {
-                        entities.Remove(entId);
-                    }
+                    entities[entId] = newEntities[entId];
                 }
                 else
                 {
-                    if (entities.ContainsKey(entId))
-                    {
-                        entities[entId] = newEntities[entId];
-                    }
-                    else
-                    {
-                        entities.Add(entId, newEntities[entId]);
-                    }
+                    entities.Add(entId, newEntities[entId]);
                 }
             }
 

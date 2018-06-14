@@ -34,6 +34,7 @@ namespace DungeonCrawler.Actions
         }
 
         public abstract void Update(float elapsed);
+        public virtual void CleanUp() { }
 
         [Key("finished")]
         public bool finished;

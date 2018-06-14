@@ -25,6 +25,9 @@ namespace DungeonCrawler.Networking
         [Key(17)]
         public virtual float Angle { get => angle; set => angle = value; }
 
+        [Key(18)]
+        public virtual float FOV { get; set; }
+
         public override Entity ToEntity()
         {
             Player player = new Player();
@@ -40,6 +43,8 @@ namespace DungeonCrawler.Networking
             player.moveDelta = new SFML.System.Vector2f(MoveDeltaX, MoveDeltaY);
 
             player.direction = new SFML.System.Vector2f((float)Math.Cos(Angle), (float)Math.Sin(Angle));
+
+            player.FOV = FOV;
 
             return player;
         }

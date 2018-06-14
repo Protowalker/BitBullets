@@ -30,8 +30,8 @@ namespace DungeonCrawler
         [Key(7)]
         protected Weapon[] weapons;
 
-        public abstract void OnPrimaryFire();
-        public abstract void OnSecondaryFire();
+        public abstract Actions.Action OnPrimaryFire();
+        public abstract Actions.Action OnSecondaryFire();
         public abstract void OnDeath();
     }
 }
