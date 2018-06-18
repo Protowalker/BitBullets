@@ -18,8 +18,9 @@ namespace DungeonCrawler.States
             ServerState
         }
 
+
         public abstract void Init();
         public abstract void Update(float deltaTime);
-        public abstract void Render();
+        public abstract void Render(float deltaTime);
     }
 }
