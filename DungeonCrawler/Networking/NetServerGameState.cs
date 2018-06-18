@@ -18,7 +18,7 @@ namespace DungeonCrawler.Networking
 
         int sequence = 0;
 
-        Dictionary<int, (NetConnection connection, int lastAckSequence)> clientIDs = new Dictionary<int, (NetConnection, int)>();
+        Dictionary<NetConnection, (int id, int lastAckSequence)> clients = new Dictionary<NetConnection, (int, int)>();
         //32 snapshots are stored. These are the 32 previous gamestates and are used for delta-ing the new gamestates.
         List<Entity>[] snapshots = new List<Entity>[32];
 
@@ -59,7 +59,7 @@ namespace DungeonCrawler.Networking
 
         //Action is stored as follows:
 
-        protected override void ProcessMessages()
+        public override void ProcessMessages()
         {
             NetIncomingMessage msg;
             while ((msg = server.ReadMessage()) != null)
@@ -81,7 +81,7 @@ namespace DungeonCrawler.Networking
                                 AddPlayer(msg.SenderConnection, playerId);
                                 break;
                             case NetConnectionStatus.Disconnected:
-                                RemovePlayer(clientIDs.First(x => x.Value.connection == msg.SenderConnection).Key);
+                                RemovePlayer(msg.SenderConnection);
                                 Console.WriteLine(msg.SenderConnection + " has Disconnected");
                                 break;
                             default:
@@ -98,8 +98,7 @@ namespace DungeonCrawler.Networking
                         {
                             MessageType type = (MessageType)msg.ReadByte();
                             int lastAckSequence = msg.ReadInt32();
-                            int senderId = msg.ReadInt32();
-                            clientIDs[senderId] = (msg.SenderConnection, lastAckSequence);
+                            clients[msg.SenderConnection] = (clients[msg.SenderConnection].id, lastAckSequence);
                             switch (type)
                             {
                                 case MessageType.Action:
@@ -138,9 +137,9 @@ namespace DungeonCrawler.Networking
                 }
                 server.Recycle(msg);
             }
-            foreach(int clientID in clientIDs.Keys)
+            foreach(NetConnection client in clients.Keys)
             {
-                SendDeltaState(clientID, clientIDs[clientID].lastAckSequence, clientIDs[clientID].connection);
+                SendDeltaState(client);
             }
             snapshots[sequence % 32].Clear();
             foreach(Entity ent in Entities.Values)
@@ -152,18 +151,21 @@ namespace DungeonCrawler.Networking
 
         public void AddPlayer(NetConnection connection, int playerId)
         {
-            clientIDs.Add(playerId, (connection, sequence));
+            clients.Add(connection, (playerId, sequence));
         }
 
-        public void RemovePlayer(int playerId)
+        public void RemovePlayer(NetConnection connection)
         {
-            Entities.Remove(playerId);
-            quadTree.RemoveItem(playerId);
-            clientIDs.Remove(playerId);
+            int id = clients[connection].id;
+            Entities.Remove(id);
+            quadTree.RemoveItem(id);
+            clients.Remove(connection);
         }
 
-        public void SendDeltaState(int senderId, int lastAckSequence, NetConnection client)
+        public void SendDeltaState(NetConnection client)
         {
+            int lastAckSequence = clients[client].lastAckSequence;
+
             List<byte> deltaStateMsg = new List<byte>();
             Dictionary<int, Entity> lastAckState = new Dictionary<int, Entity>();
 
@@ -238,8 +240,6 @@ namespace DungeonCrawler.Networking
 
             data = LZ4MessagePackSerializer.Serialize(netEnts);
             length = BitConverter.GetBytes(data.Length);
-
-            Console.WriteLine(data.Length);
 
             deltaStateMsg.AddRange(length);
             deltaStateMsg.AddRange(data);

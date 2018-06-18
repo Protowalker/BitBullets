@@ -11,6 +11,7 @@ namespace DungeonCrawler.States
     {
         public NetGameState netState;
         public abstract float TickRate { get; }
+        public abstract float NetworkTickRate { get; }
 
         public enum StateType
         {
@@ -21,6 +22,6 @@ namespace DungeonCrawler.States
 
         public abstract void Init();
         public abstract void Update(float deltaTime);
-        public abstract void Render(float deltaTime);
+        public abstract void Render();
     }
 }
