@@ -59,7 +59,7 @@ namespace DungeonCrawler.Networking
 
         //Action is stored as follows:
 
-        protected override void ProcessMessages()
+        internal override void ProcessMessages()
         {
             NetIncomingMessage msg;
             while ((msg = server.ReadMessage()) != null)
@@ -76,7 +76,7 @@ namespace DungeonCrawler.Networking
                                 Player player = new Player();
                                 player.Init();
                                 int playerId = player.Id;
-                                player.SetCurrentCharacter(new Sniper(playerId));
+                                player.SetCurrentCharacter(new Scout(playerId));
                                 SendMessage(playerId, MessageType.NewPlayer, new byte[0], msg.SenderConnection, NetDeliveryMethod.ReliableOrdered);
                                 AddPlayer(msg.SenderConnection, playerId);
                                 break;
@@ -167,12 +167,21 @@ namespace DungeonCrawler.Networking
             List<byte> deltaStateMsg = new List<byte>();
             Dictionary<int, Entity> lastAckState = new Dictionary<int, Entity>();
 
-            lastAckState = snapshots[lastAckSequence % 32].ToDictionary(k => k.Id);
-
             bool hasReset;
             //if the state has lagged behind by more than 32 updates
-            if (sequence - lastAckSequence > 32) hasReset = true;
+            if (sequence - lastAckSequence > 32 || lastAckSequence == 0) hasReset = true;
             else hasReset = false;
+
+            if (hasReset)
+            {
+                lastAckState = new Dictionary<int, Entity>();
+            }
+            else
+            {
+                lastAckState = snapshots[lastAckSequence % 32].ToDictionary(k => k.Id);
+            }
+
+
             //first thing sent is a bool saying whether we have reset the state
             deltaStateMsg.AddRange(BitConverter.GetBytes(hasReset));
 

@@ -75,7 +75,6 @@ namespace DungeonCrawler.Networking
 
         public void Update(float deltaTime)
         {
-            ProcessMessages();
 
             realTimeActions.Update(deltaTime);
             foreach (Entity ent in Entities.Values)
@@ -93,7 +92,7 @@ namespace DungeonCrawler.Networking
         }
 
 
-        protected virtual void ProcessMessages()
+        internal virtual void ProcessMessages()
         {
             InGameState currentState = (InGameState)Game.states[Game.currentState];
 
@@ -131,7 +130,7 @@ namespace DungeonCrawler.Networking
                                     player.Init();
                                     currentState.playerId = senderId;
                                     connected = true;
-                                    
+                                    lastAckSequence = 0;
                                     break;
 
                             case MessageType.DeltaState:
@@ -189,7 +188,6 @@ namespace DungeonCrawler.Networking
                                         {
                                             if (!quadTree.allItems.Contains(ent.Id))
                                             {
-                                                Console.WriteLine("contains " + ent.Id);
                                                 quadTree.Insert(ent.Id);
                                             }
                                         }
