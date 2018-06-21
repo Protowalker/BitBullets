@@ -17,6 +17,7 @@ namespace DungeonCrawler.Actions
     class Game
     {
         public static Clock deltaClock = new Clock();
+        public static Clock renderClock = new Clock();
 
 
         static readonly Vector2u resolution = new Vector2u(800, 600);
@@ -76,7 +77,9 @@ namespace DungeonCrawler.Actions
                 app.DispatchEvents();
                 app.Clear();
 
-                states[currentState].Render();
+
+                states[currentState].Render(renderClock.ElapsedTime.AsMilliseconds());
+                renderClock.Restart();
                 if (deltaClock.ElapsedTime.AsMilliseconds() >= states[currentState].TickRate)
                 {
                     states[currentState].Update(deltaClock.ElapsedTime.AsMilliseconds()/10);

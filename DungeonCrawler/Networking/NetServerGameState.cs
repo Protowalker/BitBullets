@@ -28,7 +28,6 @@ namespace DungeonCrawler.Networking
             config.Port = port;
             config.EnableUPnP = true;
             config.EnableMessageType(NetIncomingMessageType.ConnectionLatencyUpdated);
-
             server = new NetServer(config);
 
             for(int i = 0; i < snapshots.Length; i++)

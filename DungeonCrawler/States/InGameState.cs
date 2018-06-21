@@ -21,6 +21,9 @@ namespace DungeonCrawler.States
 
         public int playerId;
 
+        List<Entity> lastState = new List<Entity>();
+
+
         public InGameState(TmxMap map, Texture tileset, string host, int port)
         {
             this.map = map;
@@ -34,43 +37,82 @@ namespace DungeonCrawler.States
             Game.app.MouseMoved += new EventHandler<MouseMoveEventArgs>(OnMouseMove);
             Game.app.MouseButtonPressed += new EventHandler<MouseButtonEventArgs>(Handlers.InputHandler.OnMouseButtonPressed);
             Game.app.MouseButtonReleased += new EventHandler<MouseButtonEventArgs>(Handlers.InputHandler.OnMouseButtonReleased);
-            //GenerateCollisionMap();
+            
+            lastState.Clear();
+            foreach (Entity ent in netState.Entities.Values)
+            {
+                lastState.Add(ent.Clone());
+            }
         }
 
-        public override void Render()
+        public override void Render(float deltaTime)
         {
             if (netState.ready)
             {
-                Player player = (Player)netState.Entities[playerId];
+                DrawMap(map, tileset);
+
+                Dictionary<int, Entity> renderQueue = LerpStates();
+            
+                Player player = (Player)renderQueue[playerId];
 
                 Game.view.Center = player.rect.Position;
                 Game.view.Size = (Vector2f)Game.app.Size * player.FOV;
                 Game.app.SetView(Game.view);
 
-                DrawMap(map, tileset);
-
-                List<Entity> renderQueue = netState.Entities.Values.ToList();
-
-                foreach (Entity ent in renderQueue)
+                foreach (Entity ent in renderQueue.Values)
                 {
-                    if(ent.Id == playerId)
-                    {
-                        Game.app.Draw(netState.Entities[playerId].rect);
-                    }
-                    else
-                    {
-                        if ((ent.flags & Entity.Flags.RENDER) == Entity.Flags.RENDER)
-                            Game.app.Draw(ent.rect);
-                    }
-                  
+                    if ((ent.flags & Entity.Flags.RENDER) == Entity.Flags.RENDER)
+                        Game.app.Draw(ent.rect);
                 }
             }
 
         }
 
+        public Dictionary<int, Entity> LerpStates()
+        {
+            float deltaTime = Game.deltaClock.ElapsedTime.AsMilliseconds();
+            Dictionary<int, Entity> retEntities = new Dictionary<int, Entity>();
+            foreach (Entity ent in lastState)
+            {
+                if (!netState.Entities.ContainsKey(ent.Id)) continue;
+                else
+                {
+                    Vector2f oldPos = ent.rect.Position;
+                    Vector2f newPos = netState.Entities[ent.Id].rect.Position;
+                    Vector2f distance = newPos - oldPos;
+                    distance.X = Math.Abs(distance.X);
+                    distance.Y = Math.Abs(distance.Y);
+                    Entity retEnt = ent.Clone();
+                    float x = newPos.X;
+                    float y = newPos.Y;
+                    if (distance.X > 1)
+                    {
+                        x = (oldPos.X * (TickRate - deltaTime) + newPos.X * (deltaTime)) / TickRate;
+                    }
+                    if(distance.Y > 1)
+                    {
+                        y = (oldPos.Y * (TickRate - deltaTime) + newPos.Y * (deltaTime)) / TickRate;
+                    }
+                    if(distance.X + distance.Y > 0)
+                    {
+                        Vector2f pos = new Vector2f(x,y);
+
+                        retEnt.rect.Position = pos;
+                    }
+                    retEntities.Add(ent.Id, retEnt);
+                }
+            }
+            return retEntities;
+        }
 
         public override void Update(float deltaTime)
         {
+            lastState.Clear();
+            foreach (Entity ent in netState.Entities.Values)
+            {
+                lastState.Add(ent.Clone());
+            }
+
             netState.Update(deltaTime);
             if (netState.ready)
             {
