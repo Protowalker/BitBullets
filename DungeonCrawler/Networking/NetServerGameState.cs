@@ -77,7 +77,7 @@ namespace DungeonCrawler.Networking
                                 Player player = new Player();
                                 player.Init();
                                 int playerId = player.Id;
-                                player.SetCurrentCharacter(new Scout(playerId));
+                                player.SetCurrentCharacter(new Sniper(playerId));
                                 SendMessage(playerId, MessageType.NewPlayer, new byte[0], msg.SenderConnection, NetDeliveryMethod.ReliableOrdered);
                                 AddPlayer(msg.SenderConnection, playerId);
                                 break;

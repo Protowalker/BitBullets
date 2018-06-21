@@ -157,6 +157,9 @@ namespace DungeonCrawler.Networking
                                                 case Entity.EntityType.Wall:
                                                     ent = (Wall)netEnt.ToEntity();
                                                     break;
+                                                case Entity.EntityType.RifleShot:
+                                                    ent = (RifleShot)netEnt.ToEntity();
+                                                    break;
                                                 default:
                                                     ent = null;
                                                     Console.WriteLine("Unhandled Entity Type " + netEnt.Type);

@@ -11,6 +11,7 @@ namespace DungeonCrawler.Networking
     [Union(0, typeof(NetPlayer))]
     [Union(1, typeof(NetShotgunPellet))]
     [Union(2, typeof(NetWall))]
+    [Union(3, typeof(NetRifleShot))]
     [MessagePackObject]
     public abstract class NetEntity
     {
