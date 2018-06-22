@@ -18,7 +18,7 @@ namespace DungeonCrawler.Networking
 
         int sequence = 0;
 
-        Dictionary<NetConnection, (int id, int lastAckSequence)> clients = new Dictionary<NetConnection, (int, int)>();
+        Dictionary<int, (NetConnection connection, int lastAckSequence)> clientIDs = new Dictionary<int, (NetConnection, int)>();
         //32 snapshots are stored. These are the 32 previous gamestates and are used for delta-ing the new gamestates.
         List<Entity>[] snapshots = new List<Entity>[32];
 
@@ -59,7 +59,7 @@ namespace DungeonCrawler.Networking
 
         //Action is stored as follows:
 
-        public override void ProcessMessages()
+        internal override void ProcessMessages()
         {
             NetIncomingMessage msg;
             while ((msg = server.ReadMessage()) != null)
@@ -81,7 +81,7 @@ namespace DungeonCrawler.Networking
                                 AddPlayer(msg.SenderConnection, playerId);
                                 break;
                             case NetConnectionStatus.Disconnected:
-                                RemovePlayer(msg.SenderConnection);
+                                RemovePlayer(clientIDs.First(x => x.Value.connection == msg.SenderConnection).Key);
                                 Console.WriteLine(msg.SenderConnection + " has Disconnected");
                                 break;
                             default:
@@ -98,7 +98,8 @@ namespace DungeonCrawler.Networking
                         {
                             MessageType type = (MessageType)msg.ReadByte();
                             int lastAckSequence = msg.ReadInt32();
-                            clients[msg.SenderConnection] = (clients[msg.SenderConnection].id, lastAckSequence);
+                            int senderId = msg.ReadInt32();
+                            clientIDs[senderId] = (msg.SenderConnection, lastAckSequence);
                             switch (type)
                             {
                                 case MessageType.Action:
@@ -137,9 +138,9 @@ namespace DungeonCrawler.Networking
                 }
                 server.Recycle(msg);
             }
-            foreach(NetConnection client in clients.Keys)
+            foreach(int clientID in clientIDs.Keys)
             {
-                SendDeltaState(client);
+                SendDeltaState(clientID, clientIDs[clientID].lastAckSequence, clientIDs[clientID].connection);
             }
             snapshots[sequence % 32].Clear();
             foreach(Entity ent in Entities.Values)
@@ -151,30 +152,36 @@ namespace DungeonCrawler.Networking
 
         public void AddPlayer(NetConnection connection, int playerId)
         {
-            clients.Add(connection, (playerId, sequence));
+            clientIDs.Add(playerId, (connection, sequence));
         }
 
-        public void RemovePlayer(NetConnection connection)
+        public void RemovePlayer(int playerId)
         {
-            int id = clients[connection].id;
-            Entities.Remove(id);
-            quadTree.RemoveItem(id);
-            clients.Remove(connection);
+            Entities.Remove(playerId);
+            quadTree.RemoveItem(playerId);
+            clientIDs.Remove(playerId);
         }
 
-        public void SendDeltaState(NetConnection client)
+        public void SendDeltaState(int senderId, int lastAckSequence, NetConnection client)
         {
-            int lastAckSequence = clients[client].lastAckSequence;
-
             List<byte> deltaStateMsg = new List<byte>();
             Dictionary<int, Entity> lastAckState = new Dictionary<int, Entity>();
 
-            lastAckState = snapshots[lastAckSequence % 32].ToDictionary(k => k.Id);
-
             bool hasReset;
             //if the state has lagged behind by more than 32 updates
-            if (sequence - lastAckSequence > 32) hasReset = true;
+            if (sequence - lastAckSequence > 32 || lastAckSequence == 0) hasReset = true;
             else hasReset = false;
+
+            if (hasReset)
+            {
+                lastAckState = new Dictionary<int, Entity>();
+            }
+            else
+            {
+                lastAckState = snapshots[lastAckSequence % 32].ToDictionary(k => k.Id);
+            }
+
+
             //first thing sent is a bool saying whether we have reset the state
             deltaStateMsg.AddRange(BitConverter.GetBytes(hasReset));
 
@@ -240,6 +247,8 @@ namespace DungeonCrawler.Networking
 
             data = LZ4MessagePackSerializer.Serialize(netEnts);
             length = BitConverter.GetBytes(data.Length);
+
+            Console.WriteLine(data.Length);
 
             deltaStateMsg.AddRange(length);
             deltaStateMsg.AddRange(data);

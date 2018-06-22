@@ -13,6 +13,7 @@ namespace DungeonCrawler.Actions
     [Union(2, typeof(ScoutViewfinderAction))]
     [Union(3, typeof(CompositeAction))]
     [Union(4, typeof(ChangeDirectionAction))]
+    [Union(5, typeof(SniperRifleAction))]
     [MessagePackObject]
     public abstract class Action
     {

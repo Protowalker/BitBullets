@@ -15,10 +15,9 @@ namespace DungeonCrawler.States
     {
         TmxMap map;
 
-        public override float TickRate => 1000 / 20;
-        public override float NetworkTickRate => 1000 / 20;
+        public override float NetTickRate => 1000 / 20;
 
-
+        
         public ServerState(TmxMap map, int port)
         {
             this.map = map;

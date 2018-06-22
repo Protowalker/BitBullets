@@ -19,7 +19,8 @@ namespace DungeonCrawler
         {
             Player,
             ShotgunPellet,
-            Wall
+            Wall,
+            RifleShot
         }
 
         public EntityType type;

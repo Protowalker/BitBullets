@@ -92,7 +92,7 @@ namespace DungeonCrawler.Networking
         }
 
 
-        public virtual void ProcessMessages()
+        internal virtual void ProcessMessages()
         {
             InGameState currentState = (InGameState)Game.states[Game.currentState];
 
@@ -130,7 +130,7 @@ namespace DungeonCrawler.Networking
                                     player.Init();
                                     currentState.playerId = senderId;
                                     connected = true;
-                                    
+                                    lastAckSequence = 0;
                                     break;
 
                             case MessageType.DeltaState:
@@ -155,6 +155,9 @@ namespace DungeonCrawler.Networking
                                                     break;
                                                 case Entity.EntityType.Wall:
                                                     ent = (Wall)netEnt.ToEntity();
+                                                    break;
+                                                case Entity.EntityType.RifleShot:
+                                                    ent = (RifleShot)netEnt.ToEntity();
                                                     break;
                                                 default:
                                                     ent = null;
@@ -185,7 +188,6 @@ namespace DungeonCrawler.Networking
                                         {
                                             if (!quadTree.allItems.Contains(ent.Id))
                                             {
-                                                Console.WriteLine("contains " + ent.Id);
                                                 quadTree.Insert(ent.Id);
                                             }
                                         }
@@ -222,6 +224,7 @@ namespace DungeonCrawler.Networking
                                         ready = true;
                                     }
                                     lastAckSequence = sequence;
+                                    //Tell the server we received the state
                                     break;
                             default:
                                     Console.WriteLine("Unhandled Message Type: " + type);
@@ -234,7 +237,6 @@ namespace DungeonCrawler.Networking
             }
             if (connected)
             {
-                //Tell the server we received the state
                 SendMessage(currentState.playerId, MessageType.HeartBeat, new byte[0], NetDeliveryMethod.Unreliable);
             }
         }
@@ -261,6 +263,7 @@ namespace DungeonCrawler.Networking
             //The Server or client will later use this type to decide how to handle the data.
             msg.Write((byte)type);
             msg.Write(lastAckSequence);
+            msg.Write(senderId);
             msg.Write(data);
             client.SendMessage(msg, client.ServerConnection, method);
         }

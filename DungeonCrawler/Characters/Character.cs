@@ -7,6 +7,7 @@ using System.Collections.Generic;
 namespace DungeonCrawler
 {
     [Union(0, typeof(Scout))]
+    [Union(1, typeof(Sniper))]
     [MessagePackObject]
     public abstract class Character
     {

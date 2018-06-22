@@ -17,7 +17,7 @@ namespace DungeonCrawler.Actions
     class Game
     {
         public static Clock deltaClock = new Clock();
-        public static Clock  networkClock = new Clock();
+        public static Clock netClock = new Clock();
 
 
         static readonly Vector2u resolution = new Vector2u(800, 600);
@@ -81,14 +81,15 @@ namespace DungeonCrawler.Actions
                 states[currentState].Render();
                 if (deltaClock.ElapsedTime.AsMilliseconds() >= states[currentState].TickRate)
                 {
-                    states[currentState].Update(deltaClock.ElapsedTime.AsMilliseconds()/10);
+                    states[currentState].Update(deltaClock.ElapsedTime.AsMilliseconds()/5);
                     deltaClock.Restart();
                 }
-                if(networkClock.ElapsedTime.AsMilliseconds() >= states[currentState].NetworkTickRate)
+                if(netClock.ElapsedTime.AsMilliseconds() >= states[currentState].NetTickRate)
                 {
-                    states[currentState].netState.ProcessMessages();
-                    networkClock.Restart();
+                    states[currentState].ProcessNetworkMessages();
+                    netClock.Restart();
                 }
+
 
                 app.Display();
 

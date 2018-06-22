@@ -30,6 +30,7 @@ namespace DungeonCrawler.Characters
         [SerializationConstructor]
         public Scout(int playerId)
         {
+            
             this.parentId = playerId;
             weapons[0] = new Weapon();
         }

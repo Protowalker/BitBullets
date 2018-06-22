@@ -10,8 +10,10 @@ namespace DungeonCrawler.States
     abstract class State
     {
         public NetGameState netState;
-        public abstract float TickRate { get; }
-        public abstract float NetworkTickRate { get; }
+        //How often the game updates
+        public float TickRate { get => 1000/20; }
+        //How often the network updates
+        public abstract float NetTickRate { get; }
 
         public enum StateType
         {
@@ -23,5 +25,9 @@ namespace DungeonCrawler.States
         public abstract void Init();
         public abstract void Update(float deltaTime);
         public abstract void Render();
+        public virtual void ProcessNetworkMessages()
+        {
+            netState.ProcessMessages();
+        }
     }
 }

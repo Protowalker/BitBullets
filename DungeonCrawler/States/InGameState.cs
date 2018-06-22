@@ -17,8 +17,7 @@ namespace DungeonCrawler.States
         public TmxMap map;
         public Texture tileset;
 
-        public override float NetworkTickRate => 1000 / 100;
-        public override float TickRate => 1000 / 20;
+        public override float NetTickRate => 1000 / 20;
 
         public int playerId;
 
@@ -86,11 +85,11 @@ namespace DungeonCrawler.States
                     Entity retEnt = ent.Clone();
                     float x = newPos.X;
                     float y = newPos.Y;
-                    if (distance.X > .3f)
+                    if (distance.X > 0)
                     {
                         x = (oldPos.X * (TickRate - deltaTime) + newPos.X * (deltaTime)) / TickRate;
                     }
-                    if(distance.Y > .3f)
+                    if(distance.Y > 0)
                     {
                         y = (oldPos.Y * (TickRate - deltaTime) + newPos.Y * (deltaTime)) / TickRate;
                     }
@@ -136,6 +135,7 @@ namespace DungeonCrawler.States
                 netState.RealTimeActions.Add(((Player)netState.Entities[playerId]).OnSecondaryFire());
             }
         }
+        
 
         private void ControlPlayer()
         {
